@@ -1,1 +1,4 @@
 # Pseudo-Random
+
+In JavaScript
+
