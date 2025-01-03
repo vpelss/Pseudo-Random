@@ -932,35 +932,103 @@ th {
   <label for="seed">Seed:</label>
   <input type="number" id="seed" min="0" value="5">
 </p>
+
+<p>
+  <label for="op_mask">Output Mask: (eg: (2 ** 32)-1 = 2147483647 returns all leftmost 31 bits)</label>
+  <input type="number" id="op_mask" min="0" value="2147483647">
+</p>
+
 <div name="ca">
   <p>
-    <label for="seed">CA Rule:</label>
+    <label for="seed">CA Rule: (decimal 9 or boolean 0b1011)</label>
     <input type="number" id="seed" min="0" value="5">
   </p>
 </div>
+
+<div name="lfsr">
+  <p>
+    <label for="lfsr_taps">LFSR Taps: (decimal 9 or boolean 0b1011)</label>
+    <input type="number" id="lfsr_taps" min="0" value="5">
+  </p>
+</div>
+
+<div name="lcg">
+  <p>
+    <label for="multiplier">Multiplier: (decimal 9 or boolean 0b1011)</label>
+    <input type="number" id="multiplier" min="0" value="48271">
+  </p>
+  <p>
+    <label for="modulus">Modulus: (decimal 9 or boolean 0b1011)</label>
+    <input type="number" id="modulus" min="0" value="2147483647">
+  </p>
+  <p>
+    <label for="increment">Increment:</label>
+    <input type="number" id="increment" min="0" value="0">
+  </p>
+</div>
+
+<p>
+  Binary <input type="radio" id="binary" name="binary" value="binary" checked>
+  Decimal <input type="radio" id="decimal" name="binary" value="decimal">
+</p>
+<p>
+  Show <input type="radio" id="show" name="show" value="show" checked>
+  Hide <input type="radio" id="hide" name="show" value="hide">
+</p>
+<p>
+  Lines <input type="radio" id="lines" name="display" value="lines" checked>
+  Inline <input type="radio" id="inline" name="display" value="inline">
+</p>
+
+<p>
+  <button id="calculate" type="button" value="calculate">Calculate</button>
+
+  <button id="copyToClipBoard">Copy To Clipboard</button>
+</p>
+
+<div id='messages'>
+</div>
+<div id='output'>
+</div>
   
       <script id="rendered-js" >
+document.getElementById("calculate").onclick = calculate;
+document.getElementById("copyToClipBoard").onclick = copyToClipBoard;
+
 let random_type = document.getElementById("random_type");
 random_type.onchange = select_random;
+
 
 function select_random() {
   let list = ["ca", "lcg", "lfsr"];
   let dom_collection;
-
   //hide all options for all names
   list.forEach(function (name) {
     dom_collection = document.getElementsByName(name);
     dom_collection.forEach(function (el) {
-      el.style.display = "none";
+      el.hidden = true;
     });
   });
   //show the correct one
   let name = document.getElementById("random_type").value;
   dom_collection =  document.getElementsByName(name);
   dom_collection.forEach(function (el) {
-    el.style.display = "";
+     el.hidden = false;
   });
 }
+
+const copyToClipBoard = async () => {
+  try {
+    if (bigString == "") {
+      bigString = "failed";
+    }
+    await navigator.clipboard.writeText(bigString);
+    alert("Content copied to clipboard");
+    console.log("Content copied to clipboard");
+  } catch (err) {
+    console.error("Failed to copy: ", err);
+  }
+};
     </script>
 
   
