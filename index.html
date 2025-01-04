@@ -994,6 +994,7 @@ th {
 <script id="webworker" _type="javascript/worker">
   onmessage = function(event) {
     var input = event.data;
+    // input is {method , number_output_char , register_bit_width , seed , output_mask , ca_rule , multiplier, modulus, increment, lfsr_taps, display_output_binary, show_output , display_lines}
     //which random generation method?
     let method = input.method;
     //common inputs
@@ -1013,78 +1014,38 @@ th {
     let display_output_binary = input.display_output_binary;
     let show_output = input.show_output;
     let display_lines = input.display_lines;
-  
-  while (op.length < how_many) {
-    let output;
-    let br = '';
-    let op = window[method](number_output_char, register_bit_width,seed,output_mask,output_mask,ca_rule,multiplier,modulus,increment,lfsr_taps,display_output_binary,show_output,display_lines);
-    if (display) {
-      output = output + "<br>" + op; //display per line
-    } else {
-      op = op + random_times(); //string
+    window[method](input); //seed has a value so we are INITIALIZING
+    input.seed = undefined; // now calls to method will return values
+    while (op.length < how_many) {
+      let output;
+      let br = ""; //display inline by default
+      if (display_lines) {
+        br = "<br>"; //display lines
+      }
+      let op = window[method](input);
+      output = output + br + op ;
     }
-    
-    output = output + br + op;
-    
-  }
-  op = op.slice(0, how_many);
-  postMessage(op);
+    output = output.slice(0, number_output_char);
+    postMessage(output);
   };
-    
-    
-    
- 
   }
-  
-
-  //rough random based on simple multiplication
-  var random_times = (function() {
-    //seed,multiplier,width
-    //persistant states
-    let modulus;
-    let increment;
-    let state;
-    let multiplier;
-    let length;
-    let width;
-    let rot = 0n;
-    let prime_array = [37];
-    let last_state = 0n;
-    return function(seed, mult, mod, inc, wid) {
-      //initialization
-      seed ? (state = BigInt(seed)) : null;
-      mult ? (multiplier = BigInt(mult)) : null;
-      mod ? (modulus = BigInt(mod)) : null;
-      inc ? (increment = BigInt(inc)) : null;
-      wid ? (width = wid) : null;
-      if (
-        typeof seed == "undefined" &&
-        typeof mult == "undefined" &&
-        typeof mod == "undefined" &&
-        typeof inc == "undefined" &&
-        typeof wid == "undefined"
-      ) { //get next random number
-        state = state * BigInt(multiplier) % modulus + increment;
-        let mask = (2n ** BigInt(width)) - 1n;
+  var lcg = (function() {
+    let state; //persistant as we are in a closure
+    return function(input) {
+      if (typeof input.seed != "undefined") { // initialization
+        state = seed;
+      } else { //get next random number
+        state = state * BigInt(input.multiplier) % input.modulus + input.increment;
+        let mask = (2n ** BigInt(input.register_bit_width)) - 1n;
         state = state & mask; //limit state to bit width
-        //state = state ^ rol(state, width);
-        //state++;
-        //let state2 = ror(state, width);
-        //state2 = reverseBits(state2, width);
-        //state = state ^ state2;
-        //state = state ^ last_state;
-        //last_state = state;
-        //state = ror(state, width);
-        if (binary) {
-          result = state.toString(2).padStart(width, '0'); //bin
-          //result = state & 1n;
+        let op =  state & input.output_mask; //only show requested bit(s)???????????????
+        if (input.display_output_binary) {
+          result = state.toString(2).padStart(input.register_bit_width, '0'); //bin
         } else {
-          result = state.toString(); //dec
+          result = state.toString(); //decimal
         }
         return result;
-      } else { //reset
-        last_state = 0n;
-      }
+      } 
     };
   })();
 
