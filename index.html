@@ -1153,8 +1153,8 @@ webworker.onmessage = function (event) {
 function calculate() {
   webworker.postMessage({
     method: document.getElementById("method").value,
-    number_output_char: BigInt(document.getElementById("number_output_char").value),
-    register_bit_width: BigInt(document.getElementById("register_bit_width").value),
+    number_output_char: document.getElementById("number_output_char").value,
+    register_bit_width: document.getElementById("register_bit_width").value,
     seed: BigInt(document.getElementById("seed").value),
     output_mask: BigInt(document.getElementById("output_mask").value),
     ca_rule: document.getElementById("ca_rule").value,
