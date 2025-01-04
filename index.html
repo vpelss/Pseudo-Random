@@ -1013,14 +1013,6 @@ th {
     let display_output_binary = input.display_output_binary;
     let show_output = input.show_output;
     let display_lines = input.display_lines;
-    //oo =  ${method};
-    let string_method = input.method + "(input)";
-    string_method = "return " + input.method + "();";
-    //const fn = new Function(`return ${method}()`); //run function based of string input
-    //const fn = new Function(`return ${input.method}()`); //run function based of string input
-    //const fn = new Function( string_method ); //run function based of string input
-    //let string_method = input.method + "(input)";
-    //eval(string_method);
     //choose function
     let fn;
     if (input.method == "lcg") {
@@ -1041,7 +1033,6 @@ th {
         br = "<br>"; //display lines
       }
       let op = fn(input);
-      //let op = eval(`${input.method}(input)`);
       output = output + br + op;
     }
     output = output.slice(0, number_output_char);
@@ -1127,7 +1118,6 @@ th {
   
       <script id="rendered-js" >
 document.getElementById("calculate").onclick = calculate;
-//document.getElementById("copyToClipBoard").onclick = copyToClipBoard;
 
 let method = document.getElementById("method");
 method.onchange = select_random;
@@ -1151,6 +1141,8 @@ webworker.onmessage = function (event) {
 };
 
 function calculate() {
+   document.getElementById("message").innerHTML = "Calculating. Please wait";
+   document.getElementById("output").innerHTML = "";
   webworker.postMessage({
     method: document.getElementById("method").value,
     number_output_char: document.getElementById("number_output_char").value,
@@ -1170,8 +1162,8 @@ function calculate() {
 }
 
 //test display
-document.getElementById("message").innerHTML = "Test ouput below. <br>";
-//calculate();
+//document.getElementById("message").innerHTML = "Test ouput below. <br>";
+calculate();
 
 function select_random() {
   let list = ["ca", "lcg", "lfsr"];
@@ -1193,16 +1185,18 @@ function select_random() {
 
 const copyToClipBoard = async () => {
   try {
-    if (bigString == "") {
-      bigString = "failed";
+    if ( document.getElementById("output").innerHTML == "") {
+       document.getElementById("message").innerHTML = "Nothing to copy";
     }
-    await navigator.clipboard.writeText(bigString);
+    await navigator.clipboard.writeText( document.getElementById("output").innerHTML );
     alert("Content copied to clipboard");
     console.log("Content copied to clipboard");
   } catch (err) {
     console.error("Failed to copy: ", err);
   }
 };
+
+document.getElementById("copyToClipBoard").onclick = copyToClipBoard;
     </script>
 
   
