@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" >
 
@@ -24,7 +23,6 @@
 * http://www.opensource.org/licenses/mit-license.php
 * 12/29/2014
 */
-
 
 /* Table of contents
 ––––––––––––––––––––––––––––––––––––––––––––––––––
@@ -881,10 +879,10 @@ th {
 <p>
 -->
 
-<p><label for="random_type">Which Pseudo Random Method:</label>
-  <select id="random_type">
+<p><label for="method">Which Pseudo Random Method:</label>
+  <select id="method">
     <option value="ca">Cellular Automata</option>
-    <option value="lcg">Linear congruential generator</option>
+    <option value="lcg" selected>Linear congruential generator</option>
     <option value="lfsr">Linear-feedback shift register</option>
   </select>
 </p>
@@ -934,8 +932,9 @@ th {
 </p>
 
 <p>
-  <label for="output_mask">Output Mask: (eg: (2 ** 32)-1 = 2147483647 returns all leftmost 31 bits)</label>
-  <input type="number" id="output_mask" min="0" value="2147483647">
+
+  <label for="output_mask">Output Mask: (eg: (2 ** 32)-1 = 2147483647 returns all leftmost 31 bits. 6 returns bit 2 and 3). 0 will return all bits</label>
+  <input type="number" id="output_mask" min="0" value="0">
 </p>
 
 <div name="ca">
@@ -986,7 +985,7 @@ th {
   <button id="copyToClipBoard">Copy To Clipboard</button>
 </p>
 
-<div id='messages'>
+<div id='message'>
 </div>
 <div id='output'>
 </div>
@@ -1014,40 +1013,79 @@ th {
     let display_output_binary = input.display_output_binary;
     let show_output = input.show_output;
     let display_lines = input.display_lines;
-    window[method](input); //seed has a value so we are INITIALIZING
+    //oo =  ${method};
+    let string_method = input.method + "(input)";
+    string_method = "return " + input.method + "();";
+    //const fn = new Function(`return ${method}()`); //run function based of string input
+    //const fn = new Function(`return ${input.method}()`); //run function based of string input
+    //const fn = new Function( string_method ); //run function based of string input
+    //let string_method = input.method + "(input)";
+    //eval(string_method);
+    //choose function
+    let fn;
+    if (input.method == "lcg") {
+      fn = lcg;
+    }
+    if (input.method == "ca") {
+      fn = ca;
+    }
+    if (input.method == "lfsr") {
+      fn = lfsr;
+    }
+    fn(input); //seed has a value so we are INITIALIZING
     input.seed = undefined; // now calls to method will return values
-    while (op.length < how_many) {
-      let output;
+    let output = "";
+    while (output.length < input.number_output_char) {
       let br = ""; //display inline by default
       if (display_lines) {
         br = "<br>"; //display lines
       }
-      let op = window[method](input);
-      output = output + br + op ;
+      let op = fn(input);
+      //let op = eval(`${input.method}(input)`);
+      output = output + br + op;
     }
     output = output.slice(0, number_output_char);
     postMessage(output);
   };
-  }
   var lcg = (function() {
-    let state; //persistant as we are in a closure
+    let state = 0n; //persistant as we are in a closure
+    let result = 0n;
     return function(input) {
       if (typeof input.seed != "undefined") { // initialization
-        state = seed;
+        state = input.seed;
       } else { //get next random number
         state = state * BigInt(input.multiplier) % input.modulus + input.increment;
         let mask = (2n ** BigInt(input.register_bit_width)) - 1n;
         state = state & mask; //limit state to bit width
-        let op =  state & input.output_mask; //only show requested bit(s)???????????????
+        let op = state & input.output_mask; //only show requested bit(s)???????????????
+        op = applyMask(state, input.output_mask, input.register_bit_width);
         if (input.display_output_binary) {
           result = state.toString(2).padStart(input.register_bit_width, '0'); //bin
         } else {
           result = state.toString(); //decimal
         }
         return result;
-      } 
+      }
     };
   })();
+
+  function applyMask(state, output_mask, register_bit_width) {
+    if (output_mask == 0) {
+      return state
+    }
+    let leftmost_bit = (2n ** BigInt(width - 1));
+    let op = 0n;
+    for (let a = 0; a < register_bit_width; a++) {
+      if (output_mask & leftmost_bit) { //mask bit 1
+        op = op << 1; //only shift if we find a mask bit. that is when we will add an output bit
+        if (leftmost_bit & state) { //state bit at mask bit is 1
+          op = op | 1;
+        }
+      }
+      state = state << 1;
+    }
+    return op;
+  }
 
   function reverseBits(n, width) { // function to reverse bits of a number
     let rev = 0n;
@@ -1089,11 +1127,51 @@ th {
   
       <script id="rendered-js" >
 document.getElementById("calculate").onclick = calculate;
-document.getElementById("copyToClipBoard").onclick = copyToClipBoard;
+//document.getElementById("copyToClipBoard").onclick = copyToClipBoard;
 
-let random_type = document.getElementById("random_type");
-random_type.onchange = select_random;
+let method = document.getElementById("method");
+method.onchange = select_random;
 
+//get inline webworker code.
+var inline_webworker_blob = new Blob(
+  [document.querySelector("#webworker").textContent],
+  { type: "text/javascript" }
+);
+let webworker = new Worker(window.URL.createObjectURL(inline_webworker_blob));
+
+//webworker is replying to us
+webworker.onmessage = function (event) {
+  //let op = event.data;
+  if (typeof event.data == "undefined") return false;
+  //bigString = bigString + op;
+  document.getElementById("message").innerHTML = "Output ready.";
+  if ( document.getElementById("show_output").checked ) {
+    document.getElementById("output").innerHTML = event.data;
+  }
+};
+
+function calculate() {
+  webworker.postMessage({
+    method: document.getElementById("method").value,
+    number_output_char: BigInt(document.getElementById("number_output_char").value),
+    register_bit_width: BigInt(document.getElementById("register_bit_width").value),
+    seed: BigInt(document.getElementById("seed").value),
+    output_mask: BigInt(document.getElementById("output_mask").value),
+    ca_rule: document.getElementById("ca_rule").value,
+    multiplier: BigInt(document.getElementById("multiplier").value),
+    modulus: BigInt(document.getElementById("modulus").value),
+    increment: BigInt(document.getElementById("increment").value),
+    lfsr_taps: BigInt(document.getElementById("lfsr_taps").value),
+    display_output_binary: document.getElementById("display_output_binary")
+      .checked,
+    show_output: document.getElementById("show_output").checked,
+    display_lines: document.getElementById("display_lines").checked
+  });
+}
+
+//test display
+document.getElementById("message").innerHTML = "Test ouput below. <br>";
+//calculate();
 
 function select_random() {
   let list = ["ca", "lcg", "lfsr"];
@@ -1106,10 +1184,10 @@ function select_random() {
     });
   });
   //show the correct one
-  let name = document.getElementById("random_type").value;
-  dom_collection =  document.getElementsByName(name);
+  let name = document.getElementById("method").value;
+  dom_collection = document.getElementsByName(name);
   dom_collection.forEach(function (el) {
-     el.hidden = false;
+    el.hidden = false;
   });
 }
 
