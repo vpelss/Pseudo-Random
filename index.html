@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" >
 
@@ -7,7 +8,7 @@
   
   
 
-  <title>Pseudo Random</title>
+  <title>Pseudo Random Generator : Cellular Automata : Linear congruential generator : Linear feedback shift register</title>
 
     <link rel="canonical" href="https://codepen.io/vpelss/pen/JoPNyRo">
   
@@ -872,22 +873,11 @@ th {
 </head>
 
 <body>
-  <!--
-<p>
-  <input type="radio" name="random_type" value="ca" checked> Cellular Automata
-  <br>
-  <input type="radio" name="random_type" value="lcg"> Linear congruential generator
-  <br>
-  <input type="radio" name="random_type" value="lfsr"> Linear-feedback shift register
-  <br>
-<p>
--->
-
-<p><label for="method">Which Pseudo Random Method:</label>
+  <p><label for="method">Which Pseudo Random Method:</label>
   <select id="method">
-    <option value="ca">Cellular Automata</option>
-    <option value="lcg" selected>Linear congruential generator</option>
-    <option value="lfsr">Linear-feedback shift register</option>
+    <option value="ca" selected>Cellular Automata</option>
+    <option value="lcg">Linear congruential generator</option>
+    <option value="lfsr">Linear feedback shift register (not yet)</option>
   </select>
 </p>
 
@@ -948,7 +938,7 @@ th {
   </p>
 </div>
 
-<div name="lcg">
+<div name="lcg" hidden>
   <p>
     <label for="multiplier">Multiplier: (decimal 9 or boolean 0b1011)</label>
     <input type="number" id="multiplier" min="0" value="48271">
@@ -963,7 +953,7 @@ th {
   </p>
 </div>
 
-<div name="lfsr">
+<div name="lfsr" hidden>
   <p>
     <label for="lfsr_taps">LFSR Taps: (decimal 9 or boolean 0b1011)</label>
     <input type="number" id="lfsr_taps" min="0" value="5">
