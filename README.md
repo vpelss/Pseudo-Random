@@ -6,6 +6,8 @@ Using:
 - Linear congruential generator
 - Linear feedback shift register
 
+https://vpelss.github.io/Pseudo-Random/
+
 https://codepen.io/vpelss/pen/JoPNyRo
 
 
