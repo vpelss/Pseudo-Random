@@ -860,6 +860,10 @@ td,
 th {
   padding: 0;
 }
+
+#output{
+  font-family: "courier" 
+}
 </style>
 
   
@@ -933,14 +937,14 @@ th {
 
 <p>
 
-  <label for="output_mask">Output Mask: (eg: (2 ** 32)-1 = 2147483647 returns all leftmost 31 bits. 6 returns bit 2 and 3). 0 will return all bits</label>
-  <input type="number" id="output_mask" min="0" value="0">
+  <label for="output_mask">Output Mask: (eg: (2 ** 32)-1 = 2147483647 returns all leftmost 31 bits. 6 returns bit 2 and 3). 0 will return all bits. You can use decimal or 0b1011 format</label>
+  <input type="text" id="output_mask" min="0" value="0">
 </p>
 
 <div name="ca">
   <p>
-    <label for="ca_rule">CA Rule: (decimal 9 or boolean 0b1011)</label>
-    <input type="number" id="ca_rule" min="0" value="5">
+    <label for="ca_rule">CA Rule: (decimal 9 or boolean 0b1011. Max 255 or 0b11111111)</label>
+    <input type="text" id="ca_rule" min="0" value="30">
   </p>
 </div>
 
@@ -995,27 +999,6 @@ th {
     let input = event.data;
     let mask_register_bit_width = input.register_bit_width; //initialze as the same
     // input is {method , number_output_char , register_bit_width , seed , output_mask , ca_rule , multiplier, modulus, increment, lfsr_taps, display_output_binary, show_output , display_lines}
-    /*
-    //which random generation method?
-    let method = input.method;
-    //common inputs
-    let number_output_char = input.number_output_char;
-    let register_bit_width = input.register_bit_width;
-    let seed = input.seed;
-    let output_mask = input.output_mask;
-    //ca inputs
-    let ca_rule = input.ca_rule;
-    //lcg inputs
-    let multiplier = input.multiplier;
-    let modulus = input.modulus;
-    let increment = input.increment;
-    //lfsr inputs
-    let lfsr_taps = input.lfsr_taps;
-    //display options
-    let display_output_binary = input.display_output_binary;
-    let show_output = input.show_output;
-    let display_lines = input.display_lines;
-    */
     //choose function
     let fn;
     if (input.method == "lcg") {
@@ -1053,8 +1036,7 @@ th {
     output = output.slice(0, input.number_output_char);
     postMessage(output);
   };
-  
-  var lcg = (function() {
+  var lcg = (function() { // Linear congruential generator
     let state = 0n; //persistant as we are in a closure
     let result = 0n;
     return function(input) {
@@ -1068,19 +1050,59 @@ th {
       }
     };
   })();
+  var ca = (function() { //random number generatorbased on Cellular Automata rule 30, and others... 
+    //persistant states here
+    let state = 0n;
+    let rule_patterns = {};
+    //let ca_line_str;
+    return function(input) {
+      if (typeof input.seed != "undefined") { // initialization. wolfram 255 rule : seed is a decimal representation of binary state and is effectivly the first line in the CA
+        state = input.seed;
+        let rule = input.ca_rule;
+        //calculate rule_patterns["010"] = 1 | 0
+        //rules are dec 0 to 255 (8 bits) : each bit position maps to a 3 bit pattern (0 to 7 dec right to left) and when matched in ca_line_str determines the center output bit in ca_line_str_new
+        //convert dec rule into rule_patterns hash to determine our 1 or 0
+        //let three_bits;
+        for (let count = 0; count <= 7; count++) { //for each possible binary combintation of 3 bits
+          //three_bits = Number(count.toString(2).padStart(3, "0")); //convert decimal to binary string
+          if (rule & 1) { // for this 3 bit pattern set the rule bit
+            rule_patterns[count] = 1;
+          } else {
+            rule_patterns[count] = 0;
+          }
+          rule = rule >> 1;
+        }
+      } else { // return next output
+        let new_state = 0n;
+        let rotating_state = state;
+        let three_bits;
+        //for first bit wrap around
+        rotating_state = rol(rotating_state, input.register_bit_width);
+        //loop through bits
+        for (let n = 0; n < input.register_bit_width; n++) {
+          three_bits = rotating_state & BigInt(0b111); //get rightmost 3 bit pattern
+          new_state = new_state | BigInt(rule_patterns[three_bits]);
+          new_state = ror(new_state, input.register_bit_width);
+          rotating_state = ror(rotating_state, input.register_bit_width);
+        }
+        state = new_state;
+        return state;
+      }
+    };
+  })();
 
   function applyMask(state, output_mask, register_bit_width) {
     if (output_mask == 0) {
       return state
     }
     let ones_in_output_mask = 0;
-    let leftmost_bit = (2n ** BigInt(register_bit_width - 1));
+    let leftmost_bit_mask = (2n ** BigInt(register_bit_width - 1));
     let op = 0n;
     for (let a = 0; a < register_bit_width; a++) {
-      if (output_mask & leftmost_bit) { //mask bit 1
+      if (output_mask & leftmost_bit_mask) { //mask bit 1
         ones_in_output_mask++;
         op = op << 1n; //only shift if we find a mask bit. that is when we will add an output bit
-        if (leftmost_bit & state) { //state bit at mask bit is 1
+        if (leftmost_bit_mask & state) { //state bit at mask bit is 1
           op = op | 1n;
         }
       }
