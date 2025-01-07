@@ -1,624 +1,1284 @@
-/******/ (function() { // webpackBootstrap
-/******/ 	"use strict";
 
-;// ../../libs/common/src/platform/services/fido2/fido2-utils.ts
-class Fido2Utils {
-    static bufferToString(bufferSource) {
-        return Fido2Utils.fromBufferToB64(Fido2Utils.bufferSourceToUint8Array(bufferSource))
-            .replace(/\+/g, "-")
-            .replace(/\//g, "_")
-            .replace(/=/g, "");
-    }
-    static stringToBuffer(str) {
-        return Fido2Utils.fromB64ToArray(Fido2Utils.fromUrlB64ToB64(str));
-    }
-    static bufferSourceToUint8Array(bufferSource) {
-        if (Fido2Utils.isArrayBuffer(bufferSource)) {
-            return new Uint8Array(bufferSource);
-        }
-        else {
-            return new Uint8Array(bufferSource.buffer, bufferSource.byteOffset, bufferSource.byteLength);
-        }
-    }
-    /** Utility function to identify type of bufferSource. Necessary because of differences between runtimes */
-    static isArrayBuffer(bufferSource) {
-        return bufferSource instanceof ArrayBuffer || bufferSource.buffer === undefined;
-    }
-    static fromB64toUrlB64(b64Str) {
-        return b64Str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-    }
-    static fromBufferToB64(buffer) {
-        if (buffer == null) {
-            return null;
-        }
-        let binary = "";
-        const bytes = new Uint8Array(buffer);
-        for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return globalThis.btoa(binary);
-    }
-    static fromB64ToArray(str) {
-        if (str == null) {
-            return null;
-        }
-        const binaryString = globalThis.atob(str);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        return bytes;
-    }
-    static fromUrlB64ToB64(urlB64Str) {
-        let output = urlB64Str.replace(/-/g, "+").replace(/_/g, "/");
-        switch (output.length % 4) {
-            case 0:
-                break;
-            case 2:
-                output += "==";
-                break;
-            case 3:
-                output += "=";
-                break;
-            default:
-                throw new Error("Illegal base64url string!");
-        }
-        return output;
-    }
+<!DOCTYPE html>
+<html lang="en" >
+
+<head>
+  <meta charset="UTF-8">
+  
+  
+  
+
+  <title>Pseudo Random Generator : Cellular Automata : Linear congruential generator : Linear feedback shift register</title>
+
+    <link rel="canonical" href="https://codepen.io/vpelss/pen/JoPNyRo">
+  
+  
+  
+  
+<style>
+/*
+* Skeleton V2.0.4
+* Copyright 2014, Dave Gamache
+* www.getskeleton.com
+* Free to use under the MIT license.
+* http://www.opensource.org/licenses/mit-license.php
+* 12/29/2014
+*/
+
+/* Table of contents
+––––––––––––––––––––––––––––––––––––––––––––––––––
+- Grid
+- Base Styles
+- Typography
+- Links
+- Buttons
+- Forms
+- Lists
+- Code
+- Tables
+- Spacing
+- Utilities
+- Clearing
+- Media Queries
+*/
+
+
+/* Grid
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box; }
+.column,
+.columns {
+  width: 100%;
+  float: left;
+  box-sizing: border-box; }
+
+/* For devices larger than 400px */
+@media (min-width: 400px) {
+  .container {
+    width: 85%;
+    padding: 0; }
 }
 
-;// ./src/autofill/fido2/utils/webauthn-utils.ts
+/* For devices larger than 550px */
+@media (min-width: 550px) {
+  .container {
+    width: 80%; }
+  .column,
+  .columns {
+    margin-left: 4%; }
+  .column:first-child,
+  .columns:first-child {
+    margin-left: 0; }
 
-class WebauthnUtils {
-    static mapCredentialCreationOptions(options, fallbackSupported) {
-        var _a, _b, _c, _d, _e;
-        const keyOptions = options.publicKey;
-        if (keyOptions == undefined) {
-            throw new Error("Public-key options not found");
-        }
-        return {
-            attestation: keyOptions.attestation,
-            authenticatorSelection: {
-                requireResidentKey: (_a = keyOptions.authenticatorSelection) === null || _a === void 0 ? void 0 : _a.requireResidentKey,
-                residentKey: (_b = keyOptions.authenticatorSelection) === null || _b === void 0 ? void 0 : _b.residentKey,
-                userVerification: (_c = keyOptions.authenticatorSelection) === null || _c === void 0 ? void 0 : _c.userVerification,
-            },
-            challenge: Fido2Utils.bufferToString(keyOptions.challenge),
-            excludeCredentials: (_d = keyOptions.excludeCredentials) === null || _d === void 0 ? void 0 : _d.map((credential) => ({
-                id: Fido2Utils.bufferToString(credential.id),
-                transports: credential.transports,
-                type: credential.type,
-            })),
-            extensions: {
-                credProps: (_e = keyOptions.extensions) === null || _e === void 0 ? void 0 : _e.credProps,
-            },
-            pubKeyCredParams: keyOptions.pubKeyCredParams
-                .map((params) => ({
-                // Fix for spec-deviation: Sites using KeycloakJS send `kp.alg` as a string
-                alg: Number(params.alg),
-                type: params.type,
-            }))
-                .filter((params) => !isNaN(params.alg)),
-            rp: {
-                id: keyOptions.rp.id,
-                name: keyOptions.rp.name,
-            },
-            user: {
-                id: Fido2Utils.bufferToString(keyOptions.user.id),
-                displayName: keyOptions.user.displayName,
-                name: keyOptions.user.name,
-            },
-            timeout: keyOptions.timeout,
-            fallbackSupported,
-        };
-    }
-    static mapCredentialRegistrationResult(result) {
-        const credential = {
-            id: result.credentialId,
-            rawId: Fido2Utils.stringToBuffer(result.credentialId),
-            type: "public-key",
-            authenticatorAttachment: "platform",
-            response: {
-                clientDataJSON: Fido2Utils.stringToBuffer(result.clientDataJSON),
-                attestationObject: Fido2Utils.stringToBuffer(result.attestationObject),
-                getAuthenticatorData() {
-                    return Fido2Utils.stringToBuffer(result.authData);
-                },
-                getPublicKey() {
-                    return Fido2Utils.stringToBuffer(result.publicKey);
-                },
-                getPublicKeyAlgorithm() {
-                    return result.publicKeyAlgorithm;
-                },
-                getTransports() {
-                    return result.transports;
-                },
-            },
-            getClientExtensionResults: () => ({
-                credProps: result.extensions.credProps,
-            }),
-        };
-        // Modify prototype chains to fix `instanceof` calls.
-        // This makes these objects indistinguishable from the native classes.
-        // Unfortunately PublicKeyCredential does not have a javascript constructor so `extends` does not work here.
-        Object.setPrototypeOf(credential.response, AuthenticatorAttestationResponse.prototype);
-        Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
-        return credential;
-    }
-    static mapCredentialRequestOptions(options, fallbackSupported) {
-        var _a, _b;
-        const keyOptions = options.publicKey;
-        if (keyOptions == undefined) {
-            throw new Error("Public-key options not found");
-        }
-        return {
-            allowedCredentialIds: (_b = (_a = keyOptions.allowCredentials) === null || _a === void 0 ? void 0 : _a.map((c) => Fido2Utils.bufferToString(c.id))) !== null && _b !== void 0 ? _b : [],
-            challenge: Fido2Utils.bufferToString(keyOptions.challenge),
-            rpId: keyOptions.rpId,
-            userVerification: keyOptions.userVerification,
-            timeout: keyOptions.timeout,
-            mediation: options.mediation,
-            fallbackSupported,
-        };
-    }
-    static mapCredentialAssertResult(result) {
-        const credential = {
-            id: result.credentialId,
-            rawId: Fido2Utils.stringToBuffer(result.credentialId),
-            type: "public-key",
-            response: {
-                authenticatorData: Fido2Utils.stringToBuffer(result.authenticatorData),
-                clientDataJSON: Fido2Utils.stringToBuffer(result.clientDataJSON),
-                signature: Fido2Utils.stringToBuffer(result.signature),
-                userHandle: Fido2Utils.stringToBuffer(result.userHandle),
-            },
-            getClientExtensionResults: () => ({}),
-            authenticatorAttachment: "platform",
-        };
-        // Modify prototype chains to fix `instanceof` calls.
-        // This makes these objects indistinguishable from the native classes.
-        // Unfortunately PublicKeyCredential does not have a javascript constructor so `extends` does not work here.
-        Object.setPrototypeOf(credential.response, AuthenticatorAssertionResponse.prototype);
-        Object.setPrototypeOf(credential, PublicKeyCredential.prototype);
-        return credential;
-    }
+  .one.column,
+  .one.columns                    { width: 4.66666666667%; }
+  .two.columns                    { width: 13.3333333333%; }
+  .three.columns                  { width: 22%;            }
+  .four.columns                   { width: 30.6666666667%; }
+  .five.columns                   { width: 39.3333333333%; }
+  .six.columns                    { width: 48%;            }
+  .seven.columns                  { width: 56.6666666667%; }
+  .eight.columns                  { width: 65.3333333333%; }
+  .nine.columns                   { width: 74.0%;          }
+  .ten.columns                    { width: 82.6666666667%; }
+  .eleven.columns                 { width: 91.3333333333%; }
+  .twelve.columns                 { width: 100%; margin-left: 0; }
+
+  .one-third.column               { width: 30.6666666667%; }
+  .two-thirds.column              { width: 65.3333333333%; }
+
+  .one-half.column                { width: 48%; }
+
+  /* Offsets */
+  .offset-by-one.column,
+  .offset-by-one.columns          { margin-left: 8.66666666667%; }
+  .offset-by-two.column,
+  .offset-by-two.columns          { margin-left: 17.3333333333%; }
+  .offset-by-three.column,
+  .offset-by-three.columns        { margin-left: 26%;            }
+  .offset-by-four.column,
+  .offset-by-four.columns         { margin-left: 34.6666666667%; }
+  .offset-by-five.column,
+  .offset-by-five.columns         { margin-left: 43.3333333333%; }
+  .offset-by-six.column,
+  .offset-by-six.columns          { margin-left: 52%;            }
+  .offset-by-seven.column,
+  .offset-by-seven.columns        { margin-left: 60.6666666667%; }
+  .offset-by-eight.column,
+  .offset-by-eight.columns        { margin-left: 69.3333333333%; }
+  .offset-by-nine.column,
+  .offset-by-nine.columns         { margin-left: 78.0%;          }
+  .offset-by-ten.column,
+  .offset-by-ten.columns          { margin-left: 86.6666666667%; }
+  .offset-by-eleven.column,
+  .offset-by-eleven.columns       { margin-left: 95.3333333333%; }
+
+  .offset-by-one-third.column,
+  .offset-by-one-third.columns    { margin-left: 34.6666666667%; }
+  .offset-by-two-thirds.column,
+  .offset-by-two-thirds.columns   { margin-left: 69.3333333333%; }
+
+  .offset-by-one-half.column,
+  .offset-by-one-half.columns     { margin-left: 52%; }
+
 }
 
-;// ./src/autofill/fido2/content/messaging/message.ts
-var MessageType;
-(function (MessageType) {
-    MessageType[MessageType["CredentialCreationRequest"] = 0] = "CredentialCreationRequest";
-    MessageType[MessageType["CredentialCreationResponse"] = 1] = "CredentialCreationResponse";
-    MessageType[MessageType["CredentialGetRequest"] = 2] = "CredentialGetRequest";
-    MessageType[MessageType["CredentialGetResponse"] = 3] = "CredentialGetResponse";
-    MessageType[MessageType["AbortRequest"] = 4] = "AbortRequest";
-    MessageType[MessageType["DisconnectRequest"] = 5] = "DisconnectRequest";
-    MessageType[MessageType["ReconnectRequest"] = 6] = "ReconnectRequest";
-    MessageType[MessageType["AbortResponse"] = 7] = "AbortResponse";
-    MessageType[MessageType["ErrorResponse"] = 8] = "ErrorResponse";
-})(MessageType || (MessageType = {}));
 
-;// ../../libs/common/src/platform/abstractions/fido2/fido2-client.service.abstraction.ts
-const UserRequestedFallbackAbortReason = "UserRequestedFallback";
+/* Base Styles
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+/* NOTE
+html is set to 62.5% so that all the REM measurements throughout Skeleton
+are based on 10px sizing. So basically 1.5rem = 15px :) */
+html {
+  font-size: 62.5%; }
+body {
+  font-size: 1.5em; /* currently ems cause chrome bug misinterpreting rems on body element */
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #222; }
+
+
+/* Typography
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: 2rem;
+  font-weight: 300; }
+h1 { font-size: 4.0rem; line-height: 1.2;  letter-spacing: -.1rem;}
+h2 { font-size: 3.6rem; line-height: 1.25; letter-spacing: -.1rem; }
+h3 { font-size: 3.0rem; line-height: 1.3;  letter-spacing: -.1rem; }
+h4 { font-size: 2.4rem; line-height: 1.35; letter-spacing: -.08rem; }
+h5 { font-size: 1.8rem; line-height: 1.5;  letter-spacing: -.05rem; }
+h6 { font-size: 1.5rem; line-height: 1.6;  letter-spacing: 0; }
+
+/* Larger than phablet */
+@media (min-width: 550px) {
+  h1 { font-size: 5.0rem; }
+  h2 { font-size: 4.2rem; }
+  h3 { font-size: 3.6rem; }
+  h4 { font-size: 3.0rem; }
+  h5 { font-size: 2.4rem; }
+  h6 { font-size: 1.5rem; }
+}
+
+p {
+  margin-top: 0; }
+
+
+/* Links
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+a {
+  color: #1EAEDB; }
+a:hover {
+  color: #0FA0CE; }
+
+
+/* Buttons
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.button,
+button,
+input[type="submit"],
+input[type="reset"],
+input[type="button"] {
+  display: inline-block;
+  height: 38px;
+  padding: 0 30px;
+  color: #555;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 38px;
+  letter-spacing: .1rem;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  background-color: transparent;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  cursor: pointer;
+  box-sizing: border-box; }
+.button:hover,
+button:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover,
+input[type="button"]:hover,
+.button:focus,
+button:focus,
+input[type="submit"]:focus,
+input[type="reset"]:focus,
+input[type="button"]:focus {
+  color: #333;
+  border-color: #888;
+  outline: 0; }
+.button.button-primary,
+button.button-primary,
+input[type="submit"].button-primary,
+input[type="reset"].button-primary,
+input[type="button"].button-primary {
+  color: #FFF;
+  background-color: #33C3F0;
+  border-color: #33C3F0; }
+.button.button-primary:hover,
+button.button-primary:hover,
+input[type="submit"].button-primary:hover,
+input[type="reset"].button-primary:hover,
+input[type="button"].button-primary:hover,
+.button.button-primary:focus,
+button.button-primary:focus,
+input[type="submit"].button-primary:focus,
+input[type="reset"].button-primary:focus,
+input[type="button"].button-primary:focus {
+  color: #FFF;
+  background-color: #1EAEDB;
+  border-color: #1EAEDB; }
+
+
+/* Forms
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+  height: 38px;
+  padding: 6px 10px; /* The 6px vertically centers text on FF, ignored by Webkit */
+  background-color: #fff;
+  border: 1px solid #D1D1D1;
+  border-radius: 4px;
+  box-shadow: none;
+  box-sizing: border-box; }
+/* Removes awkward default styles on some inputs for iOS */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none; }
+textarea {
+  min-height: 65px;
+  padding-top: 6px;
+  padding-bottom: 6px; }
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  border: 1px solid #33C3F0;
+  outline: 0; }
+label,
+legend {
+  display: block;
+  margin-bottom: .5rem;
+  font-weight: 600; }
+fieldset {
+  padding: 0;
+  border-width: 0; }
+input[type="checkbox"],
+input[type="radio"] {
+  display: inline; }
+label > .label-body {
+  display: inline-block;
+  margin-left: .5rem;
+  font-weight: normal; }
+
+
+/* Lists
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+ul {
+  list-style: circle inside; }
+ol {
+  list-style: decimal inside; }
+ol, ul {
+  padding-left: 0;
+  margin-top: 0; }
+ul ul,
+ul ol,
+ol ol,
+ol ul {
+  margin: 1.5rem 0 1.5rem 3rem;
+  font-size: 90%; }
+li {
+  margin-bottom: 1rem; }
+
+
+/* Code
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+code {
+  padding: .2rem .5rem;
+  margin: 0 .2rem;
+  font-size: 90%;
+  white-space: nowrap;
+  background: #F1F1F1;
+  border: 1px solid #E1E1E1;
+  border-radius: 4px; }
+pre > code {
+  display: block;
+  padding: 1rem 1.5rem;
+  white-space: pre; }
+
+
+/* Tables
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+th,
+td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #E1E1E1; }
+th:first-child,
+td:first-child {
+  padding-left: 0; }
+th:last-child,
+td:last-child {
+  padding-right: 0; }
+
+
+/* Spacing
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+button,
+.button {
+  margin-bottom: 1rem; }
+input,
+textarea,
+select,
+fieldset {
+  margin-bottom: 1.5rem; }
+pre,
+blockquote,
+dl,
+figure,
+table,
+p,
+ul,
+ol,
+form {
+  margin-bottom: 2.5rem; }
+
+
+/* Utilities
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.u-full-width {
+  width: 100%;
+  box-sizing: border-box; }
+.u-max-full-width {
+  max-width: 100%;
+  box-sizing: border-box; }
+.u-pull-right {
+  float: right; }
+.u-pull-left {
+  float: left; }
+
+
+/* Misc
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+hr {
+  margin-top: 3rem;
+  margin-bottom: 3.5rem;
+  border-width: 0;
+  border-top: 1px solid #E1E1E1; }
+
+
+/* Clearing
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+
+/* Self Clearing Goodness */
+.container:after,
+.row:after,
+.u-cf {
+  content: "";
+  display: table;
+  clear: both; }
+
+
+/* Media Queries
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+/*
+Note: The best way to structure the use of media queries is to create the queries
+near the relevant code. For example, if you wanted to change the styles for buttons
+on small devices, paste the mobile query code up in the buttons section and style it
+there.
+*/
+
+
+/* Larger than mobile */
+@media (min-width: 400px) {}
+
+/* Larger than phablet (also point when grid becomes active) */
+@media (min-width: 550px) {}
+
+/* Larger than tablet */
+@media (min-width: 750px) {}
+
+/* Larger than desktop */
+@media (min-width: 1000px) {}
+
+/* Larger than Desktop HD */
+@media (min-width: 1200px) {}
+
+/*! normalize.css v3.0.2 | MIT License | git.io/normalize */
+
 /**
- * This class represents an abstraction of the WebAuthn Client as described by W3C:
- * https://www.w3.org/TR/webauthn-3/#webauthn-client
- *
- * The WebAuthn Client is an intermediary entity typically implemented in the user agent
- * (in whole, or in part). Conceptually, it underlies the Web Authentication API and embodies
- * the implementation of the Web Authentication API's operations.
- *
- * It is responsible for both marshalling the inputs for the underlying authenticator operations,
- * and for returning the results of the latter operations to the Web Authentication API's callers.
+ * 1. Set default font family to sans-serif.
+ * 2. Prevent iOS text size adjust after orientation change, without disabling
+ *    user zoom.
  */
-class Fido2ClientService {
-}
-/**
- * Error thrown when the user requests a fallback to the browser's built-in WebAuthn implementation.
- */
-class FallbackRequestedError extends Error {
-    constructor() {
-        super("FallbackRequested");
-        this.fallbackRequested = true;
-    }
+
+html {
+  font-family: sans-serif; /* 1 */
+  -ms-text-size-adjust: 100%; /* 2 */
+  -webkit-text-size-adjust: 100%; /* 2 */
 }
 
-;// ./src/autofill/fido2/content/messaging/messenger.ts
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+/**
+ * Remove default margin.
+ */
+
+body {
+  margin: 0;
+}
+
+/* HTML5 display definitions
+   ========================================================================== */
+
+/**
+ * Correct `block` display not defined for any HTML5 element in IE 8/9.
+ * Correct `block` display not defined for `details` or `summary` in IE 10/11
+ * and Firefox.
+ * Correct `block` display not defined for `main` in IE 11.
+ */
+
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+main,
+menu,
+nav,
+section,
+summary {
+  display: block;
+}
+
+/**
+ * 1. Correct `inline-block` display not defined in IE 8/9.
+ * 2. Normalize vertical alignment of `progress` in Chrome, Firefox, and Opera.
+ */
+
+audio,
+canvas,
+progress,
+video {
+  display: inline-block; /* 1 */
+  vertical-align: baseline; /* 2 */
+}
+
+/**
+ * Prevent modern browsers from displaying `audio` without controls.
+ * Remove excess height in iOS 5 devices.
+ */
+
+audio:not([controls]) {
+  display: none;
+  height: 0;
+}
+
+/**
+ * Address `[hidden]` styling not present in IE 8/9/10.
+ * Hide the `template` element in IE 8/9/11, Safari, and Firefox < 22.
+ */
+
+[hidden],
+template {
+  display: none;
+}
+
+/* Links
+   ========================================================================== */
+
+/**
+ * Remove the gray background color from active links in IE 10.
+ */
+
+a {
+  background-color: transparent;
+}
+
+/**
+ * Improve readability when focused and also mouse hovered in all browsers.
+ */
+
+a:active,
+a:hover {
+  outline: 0;
+}
+
+/* Text-level semantics
+   ========================================================================== */
+
+/**
+ * Address styling not present in IE 8/9/10/11, Safari, and Chrome.
+ */
+
+abbr[title] {
+  border-bottom: 1px dotted;
+}
+
+/**
+ * Address style set to `bolder` in Firefox 4+, Safari, and Chrome.
+ */
+
+b,
+strong {
+  font-weight: bold;
+}
+
+/**
+ * Address styling not present in Safari and Chrome.
+ */
+
+dfn {
+  font-style: italic;
+}
+
+/**
+ * Address variable `h1` font-size and margin within `section` and `article`
+ * contexts in Firefox 4+, Safari, and Chrome.
+ */
+
+h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+/**
+ * Address styling not present in IE 8/9.
+ */
+
+mark {
+  background: #ff0;
+  color: #000;
+}
+
+/**
+ * Address inconsistent and variable font size in all browsers.
+ */
+
+small {
+  font-size: 80%;
+}
+
+/**
+ * Prevent `sub` and `sup` affecting `line-height` in all browsers.
+ */
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+/* Embedded content
+   ========================================================================== */
+
+/**
+ * Remove border when inside `a` element in IE 8/9/10.
+ */
+
+img {
+  border: 0;
+}
+
+/**
+ * Correct overflow not hidden in IE 9/10/11.
+ */
+
+svg:not(:root) {
+  overflow: hidden;
+}
+
+/* Grouping content
+   ========================================================================== */
+
+/**
+ * Address margin not present in IE 8/9 and Safari.
+ */
+
+figure {
+  margin: 1em 40px;
+}
+
+/**
+ * Address differences between Firefox and other browsers.
+ */
+
+hr {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+  height: 0;
+}
+
+/**
+ * Contain overflow in all browsers.
+ */
+
+pre {
+  overflow: auto;
+}
+
+/**
+ * Address odd `em`-unit font size rendering in all browsers.
+ */
+
+code,
+kbd,
+pre,
+samp {
+  font-family: monospace, monospace;
+  font-size: 1em;
+}
+
+/* Forms
+   ========================================================================== */
+
+/**
+ * Known limitation: by default, Chrome and Safari on OS X allow very limited
+ * styling of `select`, unless a `border` property is set.
+ */
+
+/**
+ * 1. Correct color not being inherited.
+ *    Known issue: affects color of disabled elements.
+ * 2. Correct font properties not being inherited.
+ * 3. Address margins set differently in Firefox 4+, Safari, and Chrome.
+ */
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  color: inherit; /* 1 */
+  font: inherit; /* 2 */
+  margin: 0; /* 3 */
+}
+
+/**
+ * Address `overflow` set to `hidden` in IE 8/9/10/11.
+ */
+
+button {
+  overflow: visible;
+}
+
+/**
+ * Address inconsistent `text-transform` inheritance for `button` and `select`.
+ * All other form control elements do not inherit `text-transform` values.
+ * Correct `button` style inheritance in Firefox, IE 8/9/10/11, and Opera.
+ * Correct `select` style inheritance in Firefox.
+ */
+
+button,
+select {
+  text-transform: none;
+}
+
+/**
+ * 1. Avoid the WebKit bug in Android 4.0.* where (2) destroys native `audio`
+ *    and `video` controls.
+ * 2. Correct inability to style clickable `input` types in iOS.
+ * 3. Improve usability and consistency of cursor style between image-type
+ *    `input` and others.
+ */
+
+button,
+html input[type="button"], /* 1 */
+input[type="reset"],
+input[type="submit"] {
+  -webkit-appearance: button; /* 2 */
+  cursor: pointer; /* 3 */
+}
+
+/**
+ * Re-set default cursor for disabled elements.
+ */
+
+button[disabled],
+html input[disabled] {
+  cursor: default;
+}
+
+/**
+ * Remove inner padding and border in Firefox 4+.
+ */
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+
+/**
+ * Address Firefox 4+ setting `line-height` on `input` using `!important` in
+ * the UA stylesheet.
+ */
+
+input {
+  line-height: normal;
+}
+
+/**
+ * It's recommended that you don't attempt to style these elements.
+ * Firefox's implementation doesn't respect box-sizing, padding, or width.
+ *
+ * 1. Address box sizing set to `content-box` in IE 8/9/10.
+ * 2. Remove excess padding in IE 8/9/10.
+ */
+
+input[type="checkbox"],
+input[type="radio"] {
+  box-sizing: border-box; /* 1 */
+  padding: 0; /* 2 */
+}
+
+/**
+ * Fix the cursor style for Chrome's increment/decrement buttons. For certain
+ * `font-size` values of the `input`, it causes the cursor style of the
+ * decrement button to change from `default` to `text`.
+ */
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/**
+ * 1. Address `appearance` set to `searchfield` in Safari and Chrome.
+ * 2. Address `box-sizing` set to `border-box` in Safari and Chrome
+ *    (include `-moz` to future-proof).
+ */
+
+input[type="search"] {
+  -webkit-appearance: textfield; /* 1 */
+  -moz-box-sizing: content-box;
+  -webkit-box-sizing: content-box; /* 2 */
+  box-sizing: content-box;
+}
+
+/**
+ * Remove inner padding and search cancel button in Safari and Chrome on OS X.
+ * Safari (but not Chrome) clips the cancel button when the search input has
+ * padding (and `textfield` appearance).
+ */
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/**
+ * Define consistent border, margin, and padding.
+ */
+
+fieldset {
+  border: 1px solid #c0c0c0;
+  margin: 0 2px;
+  padding: 0.35em 0.625em 0.75em;
+}
+
+/**
+ * 1. Correct `color` not being inherited in IE 8/9/10/11.
+ * 2. Remove padding so people aren't caught out if they zero out fieldsets.
+ */
+
+legend {
+  border: 0; /* 1 */
+  padding: 0; /* 2 */
+}
+
+/**
+ * Remove default vertical scrollbar in IE 8/9/10/11.
+ */
+
+textarea {
+  overflow: auto;
+}
+
+/**
+ * Don't inherit the `font-weight` (applied by a rule above).
+ * NOTE: the default cannot safely be changed in Chrome and Safari on OS X.
+ */
+
+optgroup {
+  font-weight: bold;
+}
+
+/* Tables
+   ========================================================================== */
+
+/**
+ * Remove most spacing between table cells.
+ */
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+td,
+th {
+  padding: 0;
+}
+
+#output{
+  font-family: "courier" 
+}
+</style>
+
+  
+  
+  
+</head>
+
+<body>
+  <p><label for="method">Which Pseudo Random Method:</label>
+  <select id="method">
+    <option value="ca" selected>Cellular Automata</option>
+    <option value="lcg">Linear congruential generator</option>
+    <option value="lfsr">Linear feedback shift register</option>
+  </select>
+</p>
+
+<div name="ca">
+  <p>Cellular Automata to generate pseudo random numbers</p>
+  <p>
+    <a href=" https://www.wolframscience.com/nks/p315--the-intrinsic-generation-of-randomness/" target="blank">https://www.wolframscience.com/nks/p315--the-intrinsic-generation-of-randomness/</a>
+  </p>
+
+</div>
+
+<div name="lcg" hidden>
+  <p>Linear congruential generator (multiplication) to generate pseudo random numbers</p>
+  <p><a href="https://www.wolframscience.com/nks/p319--the-intrinsic-generation-of-randomness/" target="blank">https://www.wolframscience.com/nks/p319--the-intrinsic-generation-of-randomness/</a></p>
+  <p><a href="https://en.wikipedia.org/wiki/Linear_congruential_generator" target="blank">https://en.wikipedia.org/wiki/Linear_congruential_generator</a></p>
+</div>
+
+<div name="lfsr" hidden>
+  <p>Linear-feedback shift register to generate pseudo random numbers</p>
+  <p><a href="https://en.wikipedia.org/wiki/Linear-feedback_shift_register" target="blank">https://en.wikipedia.org/wiki/Linear-feedback_shift_register</a></p>
+  <p><a href="https://www.geeksforgeeks.org/linear-feedback-shift-registers-lfsr/" target="blank">https://www.geeksforgeeks.org/linear-feedback-shift-registers-lfsr/</a></p>
+  <p><a href="https://www.analog.com/en/resources/design-notes/random-number-generation-using-lfsr.html" target="blank">https://www.analog.com/en/resources/design-notes/random-number-generation-using-lfsr.html</a></p>
+</div>
+
+<p>
+  You can test the output randomness at:
+  <br>
+  <a href=" https://mzsoltmolnar.github.io/random-bitstream-tester/" target="blank"> https://mzsoltmolnar.github.io/random-bitstream-tester/</a>
+  <br>
+  <a href="https://gchq.github.io/CyberChef/#recipe=From_Binary('Space',8)Entropy('Shannon%20scale')&ieol=CRLF&oeol=VT" target="blank">https://gchq.github.io/CyberChef/#recipe=From_Binary('Space',8)Entropy('Shannon%20scale')&ieol=CRLF&oeol=VT</a>
+  <br>
+  The test needs 1,000,000 ones and zeros.
+</p>
+
+<p>
+  <label for="number_output_char">Number of characters to generate:</label>
+  <input type="number" id="number_output_char" min="0" value="1000">
+</p>
+<p>
+  <label for="register_bit_width">Register bit width:</label> <input type="number" id="register_bit_width" min="0" value="31">
+</p>
+
+<p>
+  <label for="seed">Seed: (Use decimal or 0b1011 format)</label>
+  <input type="text" id="seed" min="0" value="5">
+</p>
+
+<p>
+
+  <label for="output_mask">Output Mask: 0 will return all bits. (Use decimal or 0b1011 format)</label>
+  <input type="text" id="output_mask" min="0" value="0">
+</p>
+
+<div name="ca">
+  <p>
+    <label for="ca_rule">CA Rule: (Use decimal or 0b1011 format) (Max 255 or 0b11111111)</label>
+    <input type="text" id="ca_rule" min="0" value="30">
+  </p>
+</div>
+
+<div name="lcg" hidden>
+  <p>
+    <label for="multiplier">Multiplier:</label>
+    <input type="number" id="multiplier" min="0" value="48271">
+  </p>
+  <p>
+    <label for="modulus">Modulus:</label>
+    <input type="number" id="modulus" min="0" value="2147483647">
+  </p>
+  <p>
+    <label for="increment">Increment:</label>
+    <input type="number" id="increment" min="0" value="0">
+  </p>
+</div>
+
+<div name="lfsr" hidden>
+  <p>
+    <label for="lfsr_taps">LFSR Taps: (decimal 9 or boolean 0b1011)</label>
+    <input type="text" id="lfsr_taps" min="0" value="0b111000010000000000000000">
+  </p>
+</div>
+
+<p>
+  Binary <input type="radio" id="display_output_binary" name="display_output_binary" value="binary" checked>
+  Decimal <input type="radio" id="display_output_decimal" name="display_output_binary" value="decimal">
+</p>
+<p>
+  Show <input type="radio" id="show_output" name="show_output" value="show" checked>
+  Hide <input type="radio" id="hide_output" name="show_output" value="hide">
+</p>
+<p>
+  Lines <input type="radio" id="display_lines" name="display_lines" value="lines" checked>
+  Inline <input type="radio" id="display_inline" name="display_lines" value="inline">
+</p>
+
+<p>
+  <button id="calculate" type="button" value="calculate">Calculate</button>
+
+  <button id="copyToClipBoard">Copy To Clipboard</button>
+</p>
+
+<div id='message'>
+</div>
+<div id='output'>
+</div>
+
+<script id="webworker" _type="javascript/worker">
+  onmessage = function(event) {
+    let input = event.data;
+    let mask_register_bit_width = input.register_bit_width; //initialze as the same
+    // input is {method , number_output_char , register_bit_width , seed , output_mask , ca_rule , multiplier, modulus, increment, lfsr_taps, display_output_binary, show_output , display_lines}
+    //choose function
+    let fn;
+    if (input.method == "lcg") {
+      fn = lcg;
+    }
+    if (input.method == "ca") {
+      fn = ca;
+    }
+    if (input.method == "lfsr") {
+      fn = lfsr;
+    }
+    fn(input); //seed has a value at this point, so we are INITIALIZING
+    input.seed = undefined; // now calls to method fn(input) will return values
+    let output = "";
+    while (output.length < input.number_output_char) {
+      let br = ""; //display inline by default
+      if (input.display_lines) {
+        br = "<br>"; //display lines
+      }
+      let op = fn(input); //get next random state
+      //apply output_mask
+      if (input.output_mask != 0) {
+        let op_object = applyMask(op, input.output_mask, input.register_bit_width);
+        op = op_object.op;
+        mask_register_bit_width = op_object.ones_in_output_mask;
+      }
+      //binary or decimal
+      if (input.display_output_binary) {
+        op = op.toString(2).padStart(mask_register_bit_width, '0'); //bin
+      } else {
+        op = op.toString(); //decimal
+      }
+      output = output + br + op;
+    }
+    output = output.slice(0, input.number_output_char);
+    postMessage(output);
+  };
+  var lcg = (function() { // Linear congruential generator
+    let state = 0n; //persistant as we are in a closure
+    let result = 0n;
+    return function(input) {
+      if (typeof input.seed != "undefined") { // initialization
+        state = input.seed;
+      } else { //get next random number
+        state = state * BigInt(input.multiplier) % input.modulus + input.increment;
+        //limit state to bit width
+        let mask = (2n ** BigInt(input.register_bit_width)) - 1n;
+        state = state & mask;
+        return state;
+      }
+    };
+  })();
+  var ca = (function() { //random number generatorbased on Cellular Automata rule 30, and others... 
+    //persistant states here
+    let state = 0n;
+    let rule_patterns = {};
+    //let ca_line_str;
+    return function(input) {
+      if (typeof input.seed != "undefined") { // initialization. wolfram 255 rule : seed is a decimal representation of binary state and is effectivly the first line in the CA
+        state = input.seed;
+        let rule = input.ca_rule;
+        //calculate rule_patterns["010"] = 1 | 0
+        //rules are dec 0 to 255 (8 bits) : each bit position maps to a 3 bit pattern (0 to 7 dec right to left) and when matched in ca_line_str determines the center output bit in ca_line_str_new
+        //convert dec rule into rule_patterns hash to determine our 1 or 0
+        //let three_bits;
+        for (let count = 0; count <= 7; count++) { //for each possible binary combintation of 3 bits
+          //three_bits = Number(count.toString(2).padStart(3, "0")); //convert decimal to binary string
+          if (rule & 1) { // for this 3 bit pattern set the rule bit
+            rule_patterns[count] = 1;
+          } else {
+            rule_patterns[count] = 0;
+          }
+          rule = rule >> 1;
+        }
+      } else { // return next output
+        let new_state = 0n;
+        let rotating_state = state;
+        let three_bits;
+        //for first bit wrap around
+        rotating_state = rol(rotating_state, input.register_bit_width);
+        //loop through bits
+        for (let n = 0; n < input.register_bit_width; n++) {
+          three_bits = rotating_state & BigInt(0b111); //get rightmost 3 bit pattern
+          new_state = new_state | BigInt(rule_patterns[three_bits]);
+          new_state = ror(new_state, input.register_bit_width);
+          rotating_state = ror(rotating_state, input.register_bit_width);
+        }
+        state = new_state;
+        return state;
+      }
+    };
+  })();
+  var lfsr = (function() { //random number generatorbased on Cellular Automata rule 30, and others... 
+    //persistant states here
+    let state = 0n;
+    let tap_mask;
+    return function(input) {
+      if (typeof input.seed != "undefined") { // initialization
+        state = input.seed;
+        tap_mask = input.lfsr_taps;
+      } else { // return next output
+        // a ^ b ^ c : if a,b,c are bits op = 1 if number of 1 bits is odd, and 0 if number of one bits is even  
+        let numberOfOneBits = bitCount(tap_mask & state);
+        let push_bit = BigInt((numberOfOneBits % 2) ? 1 : 0);
+        new_state = state;
+        new_state = new_state << 1n;
+        new_state = new_state | push_bit;
+        //limit state to bit width
+        let mask = (2n ** BigInt(input.register_bit_width)) - 1n;
+        state = new_state & mask;
+        return state;
+      }
+    };
+  })();
+
+  function bitCount(n) {
+    return n == 0 ? 0 : n.toString(2).match(/1/g).length
+  }
+
+  function applyMask(state, output_mask, register_bit_width) {
+    if (output_mask == 0) {
+      return state
+    }
+    let ones_in_output_mask = 0;
+    let leftmost_bit_mask = (2n ** BigInt(register_bit_width - 1));
+    let op = 0n;
+    for (let a = 0; a < register_bit_width; a++) {
+      if (output_mask & leftmost_bit_mask) { //mask bit 1
+        ones_in_output_mask++;
+        op = op << 1n; //only shift if we find a mask bit. that is when we will add an output bit
+        if (leftmost_bit_mask & state) { //state bit at mask bit is 1
+          op = op | 1n;
+        }
+      }
+      output_mask = output_mask << 1n;
+      state = state << 1n;
+    }
+    return {
+      "op": op,
+      "ones_in_output_mask": ones_in_output_mask
+    }; //we also pass back the number of ones in the output_mask : ones_count 
+  }
+
+  function reverseBits(n, width) { // function to reverse bits of a number
+    let rev = 0n;
+    //while (n > 0n) { // traversing bits of 'n'  from the right
+    for (let a = width; a > 0; a--) { // traversing bits of 'n'  from the right
+      rev <<= 1n; // bitwise left shift 'rev' by 1
+      if ((n & 1n) == 1n) // if rightmost bit is '1'
+        rev ^= 1n; //set rightmost bit of rev
+      n >>= 1n; // bitwise right shift 'n' by 1
+    }
+    return rev; // reversed number
+  }
+
+  function ror(n, width) {
+    let bit = 0;
+    if (n & 1n) {
+      bit = 1;
+    }
+    n >>= 1n; //rotate
+    if (bit == 1n) { //stick it on the end
+      n = n | (2n ** BigInt(width - 1));
+    }
+    return n;
+  }
+
+  function rol(n, width) {
+    let bit = 0;
+    if (n & (2n ** BigInt(width - 1))) {
+      bit = 1;
+    }
+    n = n & ((2n ** BigInt(width - 1)) - 1n); //remove leftmost bit
+    n <<= 1n; //rotate
+    if (bit == 1n) {
+      n = n | 1n; //stick it on the end
+    }
+    return n;
+  }
+</script>
+  
+      <script id="rendered-js" >
+document.getElementById("calculate").onclick = calculate;
+
+let method = document.getElementById("method");
+method.onchange = select_random;
+
+//get inline webworker code.
+var inline_webworker_blob = new Blob(
+  [document.querySelector("#webworker").textContent],
+  { type: "text/javascript" }
+);
+let webworker = new Worker(window.URL.createObjectURL(inline_webworker_blob));
+
+//webworker is replying to us
+webworker.onmessage = function (event) {
+  //let op = event.data;
+  if (typeof event.data == "undefined") return false;
+  //bigString = bigString + op;
+  document.getElementById("message").innerHTML = "Output ready.";
+  if (document.getElementById("show_output").checked) {
+    document.getElementById("output").innerHTML = event.data;
+  }
 };
 
-
-const SENDER = "bitwarden-webauthn";
-/**
- * A class that handles communication between the page and content script. It converts
- * the browser's broadcasting API into a request/response API with support for seamlessly
- * handling aborts and exceptions across separate execution contexts.
- */
-class Messenger {
-    /**
-     * Creates a messenger that uses the browser's `window.postMessage` API to initiate
-     * requests in the content script. Every request will then create it's own
-     * `MessageChannel` through which all subsequent communication will be sent through.
-     *
-     * @param window the window object to use for communication
-     * @returns a `Messenger` instance
-     */
-    static forDOMCommunication(window) {
-        const windowOrigin = window.location.origin;
-        return new Messenger({
-            postMessage: (message, port) => window.postMessage(message, windowOrigin, [port]),
-            addEventListener: (listener) => window.addEventListener("message", listener),
-            removeEventListener: (listener) => window.removeEventListener("message", listener),
-        });
-    }
-    constructor(broadcastChannel) {
-        this.broadcastChannel = broadcastChannel;
-        this.messageEventListener = null;
-        this.onDestroy = new EventTarget();
-        this.messengerId = this.generateUniqueId();
-        this.messageEventListener = this.createMessageEventListener();
-        this.broadcastChannel.addEventListener(this.messageEventListener);
-    }
-    /**
-     * Sends a request to the content script and returns the response.
-     * AbortController signals will be forwarded to the content script.
-     *
-     * @param request data to send to the content script
-     * @param abortSignal the abort controller that might be used to abort the request
-     * @returns the response from the content script
-     */
-    request(request, abortSignal) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const requestChannel = new MessageChannel();
-            const { port1: localPort, port2: remotePort } = requestChannel;
-            try {
-                const promise = new Promise((resolve) => {
-                    localPort.onmessage = (event) => resolve(event.data);
-                });
-                const abortListener = () => localPort.postMessage({
-                    metadata: { SENDER },
-                    type: MessageType.AbortRequest,
-                });
-                abortSignal === null || abortSignal === void 0 ? void 0 : abortSignal.addEventListener("abort", abortListener);
-                this.broadcastChannel.postMessage(Object.assign(Object.assign({}, request), { SENDER, senderId: this.messengerId }), remotePort);
-                const response = yield promise;
-                abortSignal === null || abortSignal === void 0 ? void 0 : abortSignal.removeEventListener("abort", abortListener);
-                if (response.type === MessageType.ErrorResponse) {
-                    const error = new Error();
-                    Object.assign(error, JSON.parse(response.error));
-                    throw error;
-                }
-                return response;
-            }
-            finally {
-                localPort.close();
-            }
-        });
-    }
-    createMessageEventListener() {
-        return (event) => __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            const windowOrigin = window.location.origin;
-            if (event.origin !== windowOrigin || !this.handler) {
-                return;
-            }
-            const message = event.data;
-            const port = (_a = event.ports) === null || _a === void 0 ? void 0 : _a[0];
-            if ((message === null || message === void 0 ? void 0 : message.SENDER) !== SENDER || message.senderId == this.messengerId || port == null) {
-                return;
-            }
-            const abortController = new AbortController();
-            port.onmessage = (event) => {
-                if (event.data.type === MessageType.AbortRequest) {
-                    abortController.abort();
-                }
-            };
-            let onDestroyListener;
-            const destroyPromise = new Promise((_, reject) => {
-                onDestroyListener = () => reject(new FallbackRequestedError());
-                this.onDestroy.addEventListener("destroy", onDestroyListener);
-            });
-            try {
-                const handlerResponse = yield Promise.race([
-                    this.handler(message, abortController),
-                    destroyPromise,
-                ]);
-                port.postMessage(Object.assign(Object.assign({}, handlerResponse), { SENDER }));
-            }
-            catch (error) {
-                port.postMessage({
-                    SENDER,
-                    type: MessageType.ErrorResponse,
-                    error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-                });
-            }
-            finally {
-                this.onDestroy.removeEventListener("destroy", onDestroyListener);
-                port.close();
-            }
-        });
-    }
-    /**
-     * Cleans up the messenger by removing the message event listener
-     */
-    destroy() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.onDestroy.dispatchEvent(new Event("destroy"));
-            if (this.messageEventListener) {
-                yield this.sendDisconnectCommand();
-                this.broadcastChannel.removeEventListener(this.messageEventListener);
-                this.messageEventListener = null;
-            }
-        });
-    }
-    sendDisconnectCommand() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.request({ type: MessageType.DisconnectRequest });
-        });
-    }
-    generateUniqueId() {
-        return Date.now().toString(36) + Math.random().toString(36).substring(2);
-    }
+function calculate() {
+  document.getElementById("message").innerHTML = "Calculating. Please wait";
+  document.getElementById("output").innerHTML = "";
+  webworker.postMessage({
+    method: document.getElementById("method").value,
+    number_output_char: document.getElementById("number_output_char").value,
+    register_bit_width: document.getElementById("register_bit_width").value,
+    seed: BigInt(document.getElementById("seed").value),
+    output_mask: BigInt(document.getElementById("output_mask").value),
+    ca_rule: document.getElementById("ca_rule").value,
+    multiplier: BigInt(document.getElementById("multiplier").value),
+    modulus: BigInt(document.getElementById("modulus").value),
+    increment: BigInt(document.getElementById("increment").value),
+    lfsr_taps: BigInt(document.getElementById("lfsr_taps").value),
+    display_output_binary: document.getElementById("display_output_binary")
+      .checked,
+    show_output: document.getElementById("show_output").checked,
+    display_lines: document.getElementById("display_lines").checked
+  });
 }
 
-;// ./src/autofill/fido2/content/fido2-page-script.ts
-var fido2_page_script_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
+function select_random() {
+  let list = ["ca", "lcg", "lfsr"];
+  let dom_collection;
+  //hide all options for all names
+  list.forEach(function (name) {
+    dom_collection = document.getElementsByName(name);
+    dom_collection.forEach(function (el) {
+      el.hidden = true;
     });
+  });
+  //show the correct one
+  let name = document.getElementById("method").value;
+  dom_collection = document.getElementsByName(name);
+  dom_collection.forEach(function (el) {
+    el.hidden = false;
+  });
+  //set default values
+  document.getElementById("number_output_char").value = 1000;
+  document.getElementById("register_bit_width").value = 31;
+  document.getElementById("seed").value = 1;
+  document.getElementById("output_mask").value = 0;
+  document.getElementById("display_output_binary").checked = true;
+  document.getElementById("show_output").checked = true;
+  document.getElementById("display_lines").checked = true;
+  if (name == "ca") {
+    document.getElementById("seed").value = 1;
+    document.getElementById("ca_rule").value = 30;
+  }
+  if (name == "lcg") {
+    document.getElementById("multiplier").value = 48271;
+    document.getElementById("modulus").value = 2147483647;
+    document.getElementById("increment").value = 0;
+  }
+  if (name == "lfsr") {
+    document.getElementById("register_bit_width").value = 24;
+    document.getElementById("lfsr_taps").value = "0b111000010000000000000000";
+    document.getElementById("seed").value = "0b0101010011100101011";
+    //document.getElementById("output_mask").value = 1;
+  }
+  calculate();
+}
+
+const copyToClipBoard = async () => {
+  try {
+    if (document.getElementById("output").innerHTML == "") {
+      document.getElementById("message").innerHTML = "Nothing to copy";
+    }
+    await navigator.clipboard.writeText(
+      document.getElementById("output").innerHTML
+    );
+    alert("Content copied to clipboard");
+    console.log("Content copied to clipboard");
+  } catch (err) {
+    console.error("Failed to copy: ", err);
+  }
 };
 
+document.getElementById("copyToClipBoard").onclick = copyToClipBoard;
 
+//test display
+calculate();
+    </script>
 
-(function (globalContext) {
-    if (globalContext.document.currentScript) {
-        globalContext.document.currentScript.parentNode.removeChild(globalContext.document.currentScript);
-    }
-    const shouldExecuteContentScript = globalContext.document.contentType === "text/html" &&
-        (globalContext.document.location.protocol === "https:" ||
-            (globalContext.document.location.protocol === "http:" &&
-                globalContext.document.location.hostname === "localhost"));
-    if (!shouldExecuteContentScript) {
-        return;
-    }
-    const BrowserPublicKeyCredential = globalContext.PublicKeyCredential;
-    const BrowserNavigatorCredentials = navigator.credentials;
-    const BrowserAuthenticatorAttestationResponse = globalContext.AuthenticatorAttestationResponse;
-    const browserNativeWebauthnSupport = globalContext.PublicKeyCredential != undefined;
-    let browserNativeWebauthnPlatformAuthenticatorSupport = false;
-    if (!browserNativeWebauthnSupport) {
-        // Polyfill webauthn support
-        try {
-            // credentials are read-only if supported, use type-casting to force assignment
-            navigator.credentials = {
-                create() {
-                    return fido2_page_script_awaiter(this, void 0, void 0, function* () {
-                        throw new Error("Webauthn not supported in this browser.");
-                    });
-                },
-                get() {
-                    return fido2_page_script_awaiter(this, void 0, void 0, function* () {
-                        throw new Error("Webauthn not supported in this browser.");
-                    });
-                },
-            };
-            globalContext.PublicKeyCredential = class PolyfillPublicKeyCredential {
-                static isUserVerifyingPlatformAuthenticatorAvailable() {
-                    return Promise.resolve(true);
-                }
-            };
-            globalContext.AuthenticatorAttestationResponse =
-                class PolyfillAuthenticatorAttestationResponse {
-                };
-        }
-        catch (_a) {
-            /* empty */
-        }
-    }
-    else {
-        void BrowserPublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then((available) => {
-            browserNativeWebauthnPlatformAuthenticatorSupport = available;
-            if (!available) {
-                // Polyfill platform authenticator support
-                globalContext.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () => Promise.resolve(true);
-            }
-        });
-    }
-    const browserCredentials = {
-        create: navigator.credentials.create.bind(navigator.credentials),
-        get: navigator.credentials.get.bind(navigator.credentials),
-    };
-    const messenger = Messenger.forDOMCommunication(window);
-    let waitForFocusTimeout;
-    let focusListenerHandler;
-    navigator.credentials.create = createWebAuthnCredential;
-    navigator.credentials.get = getWebAuthnCredential;
-    /**
-     * Creates a new webauthn credential.
-     *
-     * @param options Options for creating new credentials.
-     * @returns Promise that resolves to the new credential object.
-     */
-    function createWebAuthnCredential(options) {
-        return fido2_page_script_awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
-            if (!isWebauthnCall(options)) {
-                return yield browserCredentials.create(options);
-            }
-            const authenticatorAttachmentIsPlatform = ((_b = (_a = options === null || options === void 0 ? void 0 : options.publicKey) === null || _a === void 0 ? void 0 : _a.authenticatorSelection) === null || _b === void 0 ? void 0 : _b.authenticatorAttachment) === "platform";
-            const fallbackSupported = (authenticatorAttachmentIsPlatform && browserNativeWebauthnPlatformAuthenticatorSupport) ||
-                (!authenticatorAttachmentIsPlatform && browserNativeWebauthnSupport);
-            try {
-                const response = yield messenger.request({
-                    type: MessageType.CredentialCreationRequest,
-                    data: WebauthnUtils.mapCredentialCreationOptions(options, fallbackSupported),
-                }, options === null || options === void 0 ? void 0 : options.signal);
-                if (response.type !== MessageType.CredentialCreationResponse) {
-                    throw new Error("Something went wrong.");
-                }
-                return WebauthnUtils.mapCredentialRegistrationResult(response.result);
-            }
-            catch (error) {
-                if (error && error.fallbackRequested && fallbackSupported) {
-                    yield waitForFocus();
-                    return yield browserCredentials.create(options);
-                }
-                throw error;
-            }
-        });
-    }
-    /**
-     * Retrieves a webauthn credential.
-     *
-     * @param options Options for creating new credentials.
-     * @returns Promise that resolves to the new credential object.
-     */
-    function getWebAuthnCredential(options) {
-        return fido2_page_script_awaiter(this, void 0, void 0, function* () {
-            if (!isWebauthnCall(options)) {
-                return yield browserCredentials.get(options);
-            }
-            const abortSignal = (options === null || options === void 0 ? void 0 : options.signal) || new AbortController().signal;
-            const fallbackSupported = browserNativeWebauthnSupport;
-            if ((options === null || options === void 0 ? void 0 : options.mediation) && options.mediation === "conditional") {
-                const internalAbortControllers = [new AbortController(), new AbortController()];
-                const bitwardenResponse = (internalAbortController) => fido2_page_script_awaiter(this, void 0, void 0, function* () {
-                    try {
-                        const abortListener = () => messenger.request({
-                            type: MessageType.AbortRequest,
-                            abortedRequestId: abortSignal.toString(),
-                        });
-                        internalAbortController.signal.addEventListener("abort", abortListener);
-                        const response = yield messenger.request({
-                            type: MessageType.CredentialGetRequest,
-                            data: WebauthnUtils.mapCredentialRequestOptions(options, fallbackSupported),
-                        }, internalAbortController.signal);
-                        internalAbortController.signal.removeEventListener("abort", abortListener);
-                        if (response.type !== MessageType.CredentialGetResponse) {
-                            throw new Error("Something went wrong.");
-                        }
-                        return WebauthnUtils.mapCredentialAssertResult(response.result);
-                    }
-                    catch (_a) {
-                        // Ignoring error
-                    }
-                });
-                const browserResponse = (internalAbortController) => browserCredentials.get(Object.assign(Object.assign({}, options), { signal: internalAbortController.signal }));
-                const abortListener = () => {
-                    internalAbortControllers.forEach((controller) => controller.abort());
-                };
-                abortSignal.addEventListener("abort", abortListener);
-                const response = yield Promise.race([
-                    bitwardenResponse(internalAbortControllers[0]),
-                    browserResponse(internalAbortControllers[1]),
-                ]);
-                abortSignal.removeEventListener("abort", abortListener);
-                internalAbortControllers.forEach((controller) => controller.abort());
-                return response;
-            }
-            try {
-                const response = yield messenger.request({
-                    type: MessageType.CredentialGetRequest,
-                    data: WebauthnUtils.mapCredentialRequestOptions(options, fallbackSupported),
-                }, options === null || options === void 0 ? void 0 : options.signal);
-                if (response.type !== MessageType.CredentialGetResponse) {
-                    throw new Error("Something went wrong.");
-                }
-                return WebauthnUtils.mapCredentialAssertResult(response.result);
-            }
-            catch (error) {
-                if (error && error.fallbackRequested && fallbackSupported) {
-                    yield waitForFocus();
-                    return yield browserCredentials.get(options);
-                }
-                throw error;
-            }
-        });
-    }
-    function isWebauthnCall(options) {
-        return options && "publicKey" in options;
-    }
-    /**
-     * Wait for window to be focused.
-     * Safari doesn't allow scripts to trigger webauthn when window is not focused.
-     *
-     * @param fallbackWait How long to wait when the script is not able to add event listeners to `window.top`. Defaults to 500ms.
-     * @param timeout Maximum time to wait for focus in milliseconds. Defaults to 5 minutes.
-     * @returns Promise that resolves when window is focused, or rejects if timeout is reached.
-     */
-    function waitForFocus() {
-        return fido2_page_script_awaiter(this, arguments, void 0, function* (fallbackWait = 500, timeout = 5 * 60 * 1000) {
-            try {
-                if (globalContext.top.document.hasFocus()) {
-                    return;
-                }
-            }
-            catch (_a) {
-                // Cannot access window.top due to cross-origin frame, fallback to waiting
-                return yield new Promise((resolve) => globalContext.setTimeout(resolve, fallbackWait));
-            }
-            const focusPromise = new Promise((resolve) => {
-                focusListenerHandler = () => resolve();
-                globalContext.top.addEventListener("focus", focusListenerHandler);
-            });
-            const timeoutPromise = new Promise((_, reject) => {
-                waitForFocusTimeout = globalContext.setTimeout(() => reject(new DOMException("The operation either timed out or was not allowed.", "AbortError")), timeout);
-            });
-            try {
-                yield Promise.race([focusPromise, timeoutPromise]);
-            }
-            finally {
-                clearWaitForFocus();
-            }
-        });
-    }
-    function clearWaitForFocus() {
-        globalContext.top.removeEventListener("focus", focusListenerHandler);
-        if (waitForFocusTimeout) {
-            globalContext.clearTimeout(waitForFocusTimeout);
-        }
-    }
-    function destroy() {
-        try {
-            if (browserNativeWebauthnSupport) {
-                navigator.credentials.create = browserCredentials.create;
-                navigator.credentials.get = browserCredentials.get;
-            }
-            else {
-                navigator.credentials = BrowserNavigatorCredentials;
-                globalContext.PublicKeyCredential = BrowserPublicKeyCredential;
-                globalContext.AuthenticatorAttestationResponse = BrowserAuthenticatorAttestationResponse;
-            }
-            clearWaitForFocus();
-            void messenger.destroy();
-        }
-        catch (e) {
-            /** empty */
-        }
-    }
-    /**
-     * Sets up a listener to handle cleanup or reconnection when the extension's
-     * context changes due to being reloaded or unloaded.
-     */
-    messenger.handler = (message) => {
-        const type = message.type;
-        // Handle cleanup for disconnect request
-        if (type === MessageType.DisconnectRequest) {
-            destroy();
-        }
-    };
-})(globalThis);
+  
+</body>
 
-/******/ })()
-;
+</html>
