@@ -889,24 +889,23 @@ count binary patterns?
 
 -->
 
-<p><label for="method">Which Pseudo Random Method:</label>
-  <select id="method">
-    <option value="ca" selected>Cellular Automata</option>
-    <option value="lcg">Linear congruential generator</option>
-    <option value="lfsr">Linear feedback shift register</option>
-  </select>
-</p>
-
+Which Pseudo Random Method:
+<select id="method">
+  <option value="ca" selected>Cellular Automata</option>
+  <option value="lcg">Linear congruential generator</option>
+  <option value="lfsr">Linear feedback shift register</option>
+</select>
+<br><br>
 <div name="ca">
-  <p>Cellular Automata to generate pseudo random numbers</p>
+  Cellular Automata to generate pseudo random numbers
   <p>
-    <a href=" https://www.wolframscience.com/nks/p315--the-intrinsic-generation-of-randomness/" target="blank">https://www.wolframscience.com/nks/p315--the-intrinsic-generation-of-randomness/</a>
+    See: <a href=" https://www.wolframscience.com/nks/p315--the-intrinsic-generation-of-randomness/" target="blank">https://www.wolframscience.com/nks/p315--the-intrinsic-generation-of-randomness/</a>
   </p>
 
 </div>
 
 <div name="lcg" hidden>
-  <p>Linear congruential generator (multiplication) to generate pseudo random numbers</p>
+  Linear congruential generator (multiplication) to generate pseudo random numbers
   <p><a href="https://www.wolframscience.com/nks/p319--the-intrinsic-generation-of-randomness/" target="blank">https://www.wolframscience.com/nks/p319--the-intrinsic-generation-of-randomness/</a></p>
   <p><a href="https://en.wikipedia.org/wiki/Linear_congruential_generator" target="blank">https://en.wikipedia.org/wiki/Linear_congruential_generator</a></p>
 </div>
@@ -928,72 +927,57 @@ count binary patterns?
   You will need to set a mask of 1 (or equivilent) and choose 'inline'. The test link above needs 1,000,000 ones and zeros to do all the tests.
 </p>
 
-<p>
-  <label for="number_output_char">Number of characters to generate:</label>
-  <input type="number" id="number_output_char" min="0" value="1000">
-</p>
-<p>
-  <label for="register_bit_width">Register bit width:</label> <input type="number" id="register_bit_width" min="0" value="31">
-</p>
-
-<p>
-  <label for="seed">Seed: (Use decimal or 0b1011 format)</label>
-  <input type="text" id="seed" min="0" value="5">
-</p>
-
-<p>
-
-  <label for="output_mask">Output Mask: 0 will return all bits. (Use decimal or 0b1011 format)</label>
-  <input type="text" id="output_mask" min="0" value="0">
-</p>
-
-<div name="ca">
+<form id="the_form" >
   <p>
-    <label for="ca_rule">CA Rule: (Use decimal or 0b1011 format) (Max 255 or 0b11111111)</label>
-    <input type="text" id="ca_rule" min="0" value="0b1000101010010111110000011111100110">
-  </p>
-</div>
-
-<div name="lcg" hidden>
-  <p>
-    <label for="multiplier">Multiplier:</label>
-    <input type="number" id="multiplier" min="0" value="48271">
+    <input type="number" id="number_output_char" min="0" value="1000"> Number of characters (0 to 9), not lines to generate
   </p>
   <p>
-    <label for="modulus">Modulus:</label>
-    <input type="number" id="modulus" min="0" value="2147483647">
+    <input type="number" id="register_bit_width" min="0" value="31"> Register bit width
   </p>
   <p>
-    <label for="increment">Increment:</label>
-    <input type="number" id="increment" min="0" value="0">
+    <input type="text" id="seed" min="0" value="5"> Seed (Use decimal or 0b1011 format)
   </p>
-</div>
-
-<div name="lfsr" hidden>
   <p>
-    <label for="lfsr_taps">LFSR Taps: (decimal 9 or boolean 0b1011)</label>
-    <input type="text" id="lfsr_taps" min="0" value="0b111000010000000000000000">
+    <input type="text" id="output_mask" min="0" value="0"> Output Mask: 0 will return all bits. Use decimal or 0b1011 format
   </p>
-</div>
+  <div name="ca">
+    <p>
+      <input type="text" id="ca_rule" min="0" value="30"> CA Rule: (Use decimal or 0b1011 format) (Max 255 or 0b11111111)
+    </p>
+  </div>
+  <div name="lcg" hidden>
+    <p>
+      <input type="number" id="multiplier" min="0" value="48271"> Multiplier
+    </p>
+    <p>
+      <input type="number" id="modulus" min="0" value="2147483647"> Modulus
+    </p>
+    <p>
+      <input type="number" id="increment" min="0" value="0"> Increment
+    </p>
+  </div>
 
-<p>
-  Binary <input type="radio" id="display_output_binary" name="display_output_binary" value="binary" checked>
-  Decimal <input type="radio" id="display_output_decimal" name="display_output_binary" value="decimal">
-</p>
-<p>
-  Show <input type="radio" id="show_output" name="show_output" value="show" checked>
-  Hide <input type="radio" id="hide_output" name="show_output" value="hide">
-</p>
-<p>
-  Lines <input type="radio" id="display_lines" name="display_lines" value="lines" checked>
-  Inline <input type="radio" id="display_inline" name="display_lines" value="inline">
-</p>
-
-<p>
-  <button id="calculate" type="button" value="calculate">Calculate</button>
-
-  <button id="copyToClipBoard">Copy To Clipboard</button>
-</p>
+  <div name="lfsr" hidden>
+    <p>
+      <input type="text" id="lfsr_taps" min="0" value="0b111000010000000000000000"> LFSR Taps: (decimal 9 or boolean 0b1011)
+    </p>
+  </div>
+  <p>
+    Output Options:<br>
+    Binary <input type="radio" id="display_output_binary" name="display_output_binary" value="binary" checked>
+    Decimal <input type="radio" id="display_output_decimal" name="display_output_binary" value="decimal">
+    <br>
+    Show <input type="radio" id="show_output" name="show_output" value="show" checked>
+    Hide <input type="radio" id="hide_output" name="show_output" value="hide">
+    <br>
+    Lines <input type="radio" id="display_lines" name="display_lines" value="lines" checked>
+    Inline <input type="radio" id="display_inline" name="display_lines" value="inline">
+  </p>
+  <p>
+    <button id="calculate" type="submit" value="calculate">Calculate</button>
+    <button id="copyToClipBoard" type="button">Copy To Clipboard</button>
+  </p>
+</form>
 
 <div id='message'>
 </div>
@@ -1021,8 +1005,9 @@ count binary patterns?
     let output = "";
     let period;
     let period_hash = {};
-    let period_op_location = 0;
-    let period_old_location;
+    let period_location_counter = 0;
+    let period_first_location;
+    let period_first_found_value;
     while (output.length < input.number_output_char) {
       let br = ""; //display inline by default
       if (input.display_lines) {
@@ -1031,22 +1016,23 @@ count binary patterns?
       let op = fn(input); //get next random state
       //calculate period before mask
       /*
-calculate cycle period of registers. We need to find 2 conecutive values show up twice. so period[number] = location, when SECOND one is found, get next number and see if it is right arter the first number found. If so, the period id this location minus the previous location!
+calculate cycle period of registers. We need to find 2 conecutive values that show up twice. so we use hash period[number] = location, when SECOND one is found, get following number and see if it also follows the first number found. If so, the period id this location minus the previous location!
       */
       if (!period) { //we have not found our period
-        if (typeof period_old_location != "undefined") { //last pass triggered a possible found peiod value. let us confirm by seeing if two valus are folled by two other equal values
-          if ((period_old_location + 1) == period_hash[op]) { //found our period, stop further search and delete hash
-            period = period_op_location - period_old_location + 1;
+        if (typeof period_first_location != "undefined") { //last pass triggered a possible found peiod value. let us confirm by seeing if two valus are folled by two other equal values
+          if ((period_first_location + 1) == period_hash[op]) { //found our period, stop further search and delete hash
+            period = period_location_counter - period_first_location + 1;
             period_hash = {};
           } else { //this is a bust. new search
-            period_old_location = undefined;
+            period_first_location = undefined;
           }
         }
         if (typeof period_hash[op] != "undefined") { //we have seen this value before at location period_hash[op] and also now at period_op_location
           //trigger search on next run to see if the two following values are equal also
-          period_old_location = period_hash[op];
+          period_first_location = period_hash[op];
+          period_first_found_value = op;
         }
-        period_hash[op] = period_op_location++;
+        period_hash[op] = period_location_counter++;
       }
       if (input.output_mask != 0) { //apply output_mask
         let op_object = applyMask(op, input.output_mask, input.register_bit_width);
@@ -1062,7 +1048,12 @@ calculate cycle period of registers. We need to find 2 conecutive values show up
       output = output + br + op;
     }
     output = output.slice(0, input.number_output_char); //limit to exactly number_output_char
-    let meta_output = {"output" : output , "period" : period}
+    let meta_output = {
+      "output": output,
+      "period": period,
+      "period_first_location": period_first_location,
+      "period_first_found_value": period_first_found_value
+    }
     postMessage(meta_output);
   };
   var lcg = (function() { // Linear congruential generator
@@ -1225,7 +1216,8 @@ calculate cycle period of registers. We need to find 2 conecutive values show up
 </script>
   
       <script id="rendered-js" >
-document.getElementById("calculate").onclick = calculate;
+document.getElementById("calculate").onclick = calculate_from_form;
+document.getElementById("the_form").onsubmit = calculate_from_form;
 
 let method = document.getElementById("method");
 method.onchange = select_random;
@@ -1240,15 +1232,22 @@ let webworker = new Worker(window.URL.createObjectURL(inline_webworker_blob));
 //webworker is replying to us
 webworker.onmessage = function (event) {
   let op = event.data;
-  let output = op.output;
-  let period = op.period;
   if (typeof event.data == "undefined") return false;
   //bigString = bigString + op;
-  document.getElementById("message").innerHTML = "Output ready. Period = " + period;
+  document.getElementById("message").innerHTML = `Output ready.<br> 
+Repeating register period found. Period: ${op.period}<br>
+  First period value found:  ${op.period_first_found_value}<br>
+  First peiod location found at: =  ${op.period_first_location}<br>
+ `;
   if (document.getElementById("show_output").checked) {
-    document.getElementById("output").innerHTML = output;
+    document.getElementById("output").innerHTML = op.output;
   }
 };
+
+function calculate_from_form(event) {
+   event.preventDefault(); //stop form submit from resfreshing screen
+  calculate();
+}
 
 function calculate() {
   document.getElementById("message").innerHTML = "Calculating. Please wait";
@@ -1296,7 +1295,7 @@ function select_random() {
   document.getElementById("show_output").checked = true;
   document.getElementById("display_lines").checked = true;
   if (name == "ca") {
-    document.getElementById("seed").value = "0b1000101010010111110000011111100110";
+    document.getElementById("seed").value = "1";
     document.getElementById("ca_rule").value = 30;
   }
   if (name == "lcg") {
@@ -1312,6 +1311,7 @@ function select_random() {
   }
   calculate();
 }
+select_random();
 
 const copyToClipBoard = async () => {
   try {
