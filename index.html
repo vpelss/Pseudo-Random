@@ -873,7 +873,23 @@ th {
 </head>
 
 <body>
-  <p><label for="method">Which Pseudo Random Method:</label>
+  <!--
+ideas
+
+line on 1 and zeros bouncing back and forth? period? 
+2d back and forth (like gas) just horiz and vert
+
+
+
+ratio of 1 and 0
+
+count runs of 1 and 0
+
+count binary patterns? 
+
+-->
+
+<p><label for="method">Which Pseudo Random Method:</label>
   <select id="method">
     <option value="ca" selected>Cellular Automata</option>
     <option value="lcg">Linear congruential generator</option>
@@ -909,7 +925,7 @@ th {
   <br>
   <a href="https://gchq.github.io/CyberChef/#recipe=From_Binary('Space',8)Entropy('Shannon%20scale')&ieol=CRLF&oeol=VT" target="blank">https://gchq.github.io/CyberChef/#recipe=From_Binary('Space',8)Entropy('Shannon%20scale')&ieol=CRLF&oeol=VT</a>
   <br>
-  The test needs 1,000,000 ones and zeros.
+  You will need to set a mask of 1 (or equivilent) and choose 'inline'. The test link above needs 1,000,000 ones and zeros to do all the tests.
 </p>
 
 <p>
@@ -934,7 +950,7 @@ th {
 <div name="ca">
   <p>
     <label for="ca_rule">CA Rule: (Use decimal or 0b1011 format) (Max 255 or 0b11111111)</label>
-    <input type="text" id="ca_rule" min="0" value="30">
+    <input type="text" id="ca_rule" min="0" value="0b1000101010010111110000011111100110">
   </p>
 </div>
 
@@ -1003,14 +1019,36 @@ th {
     fn(input); //seed has a value at this point, so we are INITIALIZING
     input.seed = undefined; // now calls to method fn(input) will return values
     let output = "";
+    let period;
+    let period_hash = {};
+    let period_op_location = 0;
+    let period_old_location;
     while (output.length < input.number_output_char) {
       let br = ""; //display inline by default
       if (input.display_lines) {
         br = "<br>"; //display lines
       }
       let op = fn(input); //get next random state
-      //apply output_mask
-      if (input.output_mask != 0) {
+      //calculate period before mask
+      /*
+calculate cycle period of registers. We need to find 2 conecutive values show up twice. so period[number] = location, when SECOND one is found, get next number and see if it is right arter the first number found. If so, the period id this location minus the previous location!
+      */
+      if (!period) { //we have not found our period
+        if (typeof period_old_location != "undefined") { //last pass triggered a possible found peiod value. let us confirm by seeing if two valus are folled by two other equal values
+          if ((period_old_location + 1) == period_hash[op]) { //found our period, stop further search and delete hash
+            period = period_op_location - period_old_location + 1;
+            period_hash = {};
+          } else { //this is a bust. new search
+            period_old_location = undefined;
+          }
+        }
+        if (typeof period_hash[op] != "undefined") { //we have seen this value before at location period_hash[op] and also now at period_op_location
+          //trigger search on next run to see if the two following values are equal also
+          period_old_location = period_hash[op];
+        }
+        period_hash[op] = period_op_location++;
+      }
+      if (input.output_mask != 0) { //apply output_mask
         let op_object = applyMask(op, input.output_mask, input.register_bit_width);
         op = op_object.op;
         mask_register_bit_width = op_object.ones_in_output_mask;
@@ -1023,8 +1061,9 @@ th {
       }
       output = output + br + op;
     }
-    output = output.slice(0, input.number_output_char);
-    postMessage(output);
+    output = output.slice(0, input.number_output_char); //limit to exactly number_output_char
+    let meta_output = {"output" : output , "period" : period}
+    postMessage(meta_output);
   };
   var lcg = (function() { // Linear congruential generator
     let state = 0n; //persistant as we are in a closure
@@ -1050,12 +1089,9 @@ th {
       if (typeof input.seed != "undefined") { // initialization. wolfram 255 rule : seed is a decimal representation of binary state and is effectivly the first line in the CA
         state = input.seed;
         let rule = input.ca_rule;
-        //calculate rule_patterns["010"] = 1 | 0
+        //calculate rule_patterns["0b010"] = 1 | 0
         //rules are dec 0 to 255 (8 bits) : each bit position maps to a 3 bit pattern (0 to 7 dec right to left) and when matched in ca_line_str determines the center output bit in ca_line_str_new
-        //convert dec rule into rule_patterns hash to determine our 1 or 0
-        //let three_bits;
         for (let count = 0; count <= 7; count++) { //for each possible binary combintation of 3 bits
-          //three_bits = Number(count.toString(2).padStart(3, "0")); //convert decimal to binary string
           if (rule & 1) { // for this 3 bit pattern set the rule bit
             rule_patterns[count] = 1;
           } else {
@@ -1096,6 +1132,24 @@ th {
         new_state = state;
         new_state = new_state << 1n;
         new_state = new_state | push_bit;
+        //alt method to compare/test
+        let alt_new_state = state;
+        let alt_tap_mask = tap_mask;
+        let running_xor_result = 0n;
+        for (let a = 0; a < input.register_bit_width; a++) {
+          if (alt_tap_mask & 1n) {
+            let nextbit = alt_new_state & 1n;
+            running_xor_result = running_xor_result ^ nextbit;
+          }
+          alt_new_state = alt_new_state >> 1n
+          alt_tap_mask = alt_tap_mask >> 1n;
+        }
+        /* equivilance testing
+        if(running_xor_result != push_bit){
+          console.log("lfsr error");
+          throw "lfsr error";
+        }
+        */
         //limit state to bit width
         let mask = (2n ** BigInt(input.register_bit_width)) - 1n;
         state = new_state & mask;
@@ -1185,12 +1239,14 @@ let webworker = new Worker(window.URL.createObjectURL(inline_webworker_blob));
 
 //webworker is replying to us
 webworker.onmessage = function (event) {
-  //let op = event.data;
+  let op = event.data;
+  let output = op.output;
+  let period = op.period;
   if (typeof event.data == "undefined") return false;
   //bigString = bigString + op;
-  document.getElementById("message").innerHTML = "Output ready.";
+  document.getElementById("message").innerHTML = "Output ready. Period = " + period;
   if (document.getElementById("show_output").checked) {
-    document.getElementById("output").innerHTML = event.data;
+    document.getElementById("output").innerHTML = output;
   }
 };
 
@@ -1240,7 +1296,7 @@ function select_random() {
   document.getElementById("show_output").checked = true;
   document.getElementById("display_lines").checked = true;
   if (name == "ca") {
-    document.getElementById("seed").value = 1;
+    document.getElementById("seed").value = "0b1000101010010111110000011111100110";
     document.getElementById("ca_rule").value = 30;
   }
   if (name == "lcg") {
