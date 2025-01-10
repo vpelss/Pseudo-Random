@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" >
 
@@ -879,17 +878,13 @@ ideas
 line on 1 and zeros bouncing back and forth? period? 
 2d back and forth (like gas) just horiz and vert
 
-
-
-ratio of 1 and 0
-
 count runs of 1 and 0
 
 count binary patterns? 
 
 -->
 
-Which Pseudo Random Method:
+Pseudo Random Methods in JavaScript:
 <select id="method">
   <option value="ca" selected>Cellular Automata</option>
   <option value="lcg">Linear congruential generator</option>
@@ -927,7 +922,7 @@ Which Pseudo Random Method:
   You will need to set a mask of 1 (or equivilent) and choose 'inline'. The test link above needs 1,000,000 ones and zeros to do all the tests.
 </p>
 
-<form id="the_form" >
+<form id="the_form" method="get" action="#">
   <p>
     <input type="number" id="number_output_char" min="0" value="1000"> Number of characters (0 to 9), not lines to generate
   </p>
@@ -1008,16 +1003,21 @@ Which Pseudo Random Method:
     let period_location_counter = 0;
     let period_first_location;
     let period_first_found_value;
+    
+    let one_count = 0;
+    let zero_count = 1; //start at one so no divide by zero
+    
     while (output.length < input.number_output_char) {
       let br = ""; //display inline by default
       if (input.display_lines) {
         br = "<br>"; //display lines
       }
       let op = fn(input); //get next random state
-      //calculate period before mask
-      /*
-calculate cycle period of registers. We need to find 2 conecutive values that show up twice. so we use hash period[number] = location, when SECOND one is found, get following number and see if it also follows the first number found. If so, the period id this location minus the previous location!
-      */
+      //calculate register period before mask
+      //We need to find 2 consecutive register numbers that occur twice 
+      //we use period_hash[register_value] = location_found
+      //when a SECOND occurance of register_value is found, get the following numbers and see if they are equal
+      //If so, the period is this location minus the previous location
       if (!period) { //we have not found our period
         if (typeof period_first_location != "undefined") { //last pass triggered a possible found peiod value. let us confirm by seeing if two valus are folled by two other equal values
           if ((period_first_location + 1) == period_hash[op]) { //found our period, stop further search and delete hash
@@ -1042,6 +1042,12 @@ calculate cycle period of registers. We need to find 2 conecutive values that sh
       //binary or decimal
       if (input.display_output_binary) {
         op = op.toString(2).padStart(mask_register_bit_width, '0'); //bin
+        //only count 1 and 0 here
+        let op_length = op.length;
+        let op_remove_zeros = op.replaceAll("0" , "");
+        let ones = op_remove_zeros.length;
+        one_count = one_count + ones;
+        zero_count = zero_count + (op_length - ones);
       } else {
         op = op.toString(); //decimal
       }
@@ -1052,9 +1058,15 @@ calculate cycle period of registers. We need to find 2 conecutive values that sh
       "output": output,
       "period": period,
       "period_first_location": period_first_location,
-      "period_first_found_value": period_first_found_value
+      "period_first_found_value": period_first_found_value,
+      "one_zero_ratio": (one_count / zero_count)
     }
     postMessage(meta_output);
+   //free space
+    output = "";
+    period_hash = {};
+    meta_output = {};
+    h = 7;
   };
   var lcg = (function() { // Linear congruential generator
     let state = 0n; //persistant as we are in a closure
@@ -1237,7 +1249,8 @@ webworker.onmessage = function (event) {
   document.getElementById("message").innerHTML = `Output ready.<br> 
 Repeating register period found. Period: ${op.period}<br>
   First period value found:  ${op.period_first_found_value}<br>
-  First peiod location found at: =  ${op.period_first_location}<br>
+  First period location found at: ${op.period_first_location}<br>
+  One to Zero Ratio: ${op.one_zero_ratio}
  `;
   if (document.getElementById("show_output").checked) {
     document.getElementById("output").innerHTML = op.output;
