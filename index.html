@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" >
 
@@ -887,6 +888,7 @@ count binary patterns?
 Pseudo Random Methods in JavaScript:
 <select id="method">
   <option value="ca" selected>Cellular Automata</option>
+  <option value="ca_test_ready">Cellular Automata : Output ready for testing</option>
   <option value="lcg">Linear congruential generator</option>
   <option value="lfsr">Linear feedback shift register</option>
 </select>
@@ -989,7 +991,7 @@ Pseudo Random Methods in JavaScript:
     if (input.method == "lcg") {
       fn = lcg;
     }
-    if (input.method == "ca") {
+    if (input.method == "ca" || input.method == "ca_test_ready") {
       fn = ca;
     }
     if (input.method == "lfsr") {
@@ -1241,19 +1243,19 @@ var inline_webworker_blob = new Blob(
 );
 let webworker = new Worker(window.URL.createObjectURL(inline_webworker_blob));
 
+let webworker_output;
 //webworker is replying to us
 webworker.onmessage = function (event) {
-  let op = event.data;
+  webworker_output = event.data;
   if (typeof event.data == "undefined") return false;
-  //bigString = bigString + op;
   document.getElementById("message").innerHTML = `Output ready.<br> 
-Repeating register period found. Period: ${op.period}<br>
-  First period value found:  ${op.period_first_found_value}<br>
-  First period location found at: ${op.period_first_location}<br>
-  One to Zero Ratio: ${op.one_zero_ratio}
+Repeating register period found. Period: ${webworker_output.period}<br>
+  First period value found:  ${webworker_output.period_first_found_value}<br>
+  First period location found at: ${webworker_output.period_first_location}<br>
+  One to Zero Ratio: ${webworker_output.one_zero_ratio}
  `;
   if (document.getElementById("show_output").checked) {
-    document.getElementById("output").innerHTML = op.output;
+    document.getElementById("output").innerHTML = webworker_output.output;
   }
 };
 
@@ -1311,6 +1313,15 @@ function select_random() {
     document.getElementById("seed").value = "1";
     document.getElementById("ca_rule").value = 30;
   }
+   if (name == "ca_test_ready") {
+       document.getElementById("number_output_char").value = 1000000;
+  document.getElementById("register_bit_width").value = 31;
+     document.getElementById("seed").value = "1";
+    document.getElementById("ca_rule").value = 30;
+  document.getElementById("output_mask").value = 1;
+  document.getElementById("show_output").checked = true;
+  document.getElementById("display_lines").checked = false;
+  } 
   if (name == "lcg") {
     document.getElementById("multiplier").value = 48271;
     document.getElementById("modulus").value = 2147483647;
@@ -1328,11 +1339,12 @@ select_random();
 
 const copyToClipBoard = async () => {
   try {
-    if (document.getElementById("output").innerHTML == "") {
+    if (webworker_output.output == "") {
       document.getElementById("message").innerHTML = "Nothing to copy";
     }
     await navigator.clipboard.writeText(
-      document.getElementById("output").innerHTML
+      webworker_output.output
+      //document.getElementById("output").innerHTML
     );
     alert("Content copied to clipboard");
     console.log("Content copied to clipboard");
