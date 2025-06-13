@@ -879,9 +879,16 @@ to do:
 
 ideas
 
+- - - in the LCG have a second pseudo random stream xor with the input/output of the shift register
+
+- group of 3 , 4 , 5 (whole register) odd = 1 , even = 0 (alternate)
+
+- group 3 , 4 , 5 (whole register) prime ?
+
 line on 1 and zeros bouncing back and forth? period? 
 2d back and forth (like gas) just horiz and vert
 atoms : Left Right Still 
+currently this idea fails as bouncing 1's act the same as 1's passing through each other
 
 count runs of 1 and 0
 
@@ -930,21 +937,19 @@ Pseudo Random Methods in JavaScript:
 
 <form id="the_form" method="get" action="#">
   <p>
-    <input type="number" id="number_output_char" min="0" value="1000"> Number of characters (0 to 9), not lines to generate
+  <p>
+    <input type="number" id="register_bit_width" min="0" value="31"> Register character/bit width. Each output line is from a register's state.
   </p>
   <p>
-    <input type="number" id="register_bit_width" min="0" value="31"> Register bit width
+    <input type="text" id="seed" min="0" value="5"> Start seed for the register. (Use decimal or 0b1011 format)
   </p>
   <p>
-    <input type="text" id="seed" min="0" value="5"> Seed (Use decimal or 0b1011 format)
-  </p>
-  <p>
-    <input type="text" id="output_mask" min="0" value="0"> Output Mask: 0 will return all bits. Use decimal or 0b1011 format
+    <input type="text" id="output_mask" min="0" value="0"> Output Mask to tap off register bits only. Register is converted to binary first. 0 will return all bits. Use decimal or 0b1011 format
   </p>
   <div name="ca">
     <p>
       <input type="text" id="ca_rule" min="0" value="30"> CA Rule: (Use decimal or 0b1011 format) (Max 255 or 0b11111111)
-    </p>
+   
   </div>
   <div name="lcg" hidden>
     <p>
@@ -963,6 +968,11 @@ Pseudo Random Methods in JavaScript:
       <input type="text" id="lfsr_taps" min="0" value="0b111000010000000000000000"> LFSR Taps: (decimal 9 or boolean 0b1011)
     </p>
   </div>
+
+  </p>
+        <input type="number" id="number_output_char" min="0" value="1000"> Number of characters to output (0/1 or 0 to 9). This is not how many lines to generate.
+  </p>
+
   <p>
     Output Options:<br>
     Binary <input type="radio" id="display_output_binary" name="display_output_binary" value="binary" checked>
@@ -1009,16 +1019,24 @@ Pseudo Random Methods in JavaScript:
     let period_location_counter = 0;
     let period_first_location;
     let period_first_found_value;
+    let character_count = 0;
     
     let one_count = 0;
     let zero_count = 1; //start at one so no divide by zero
     
-    while (output.length < input.number_output_char) {
+    //while (output.length < input.number_output_char) {
+    while (character_count < input.number_output_char) {
       let br = ""; //display inline by default
       if (input.display_lines) {
         br = "<br>"; //display lines
       }
       let op = fn(input); //get next random state
+      
+      // testing
+        if (input.method == "ca"){ 
+           op = fn(input);
+        }
+      
       //calculate register period before mask
       //We need to find 2 consecutive register numbers that occur twice 
       //we use period_hash[register_value] = location_found
@@ -1057,9 +1075,11 @@ Pseudo Random Methods in JavaScript:
       } else {
         op = op.toString(); //decimal
       }
+      character_count = character_count + op.length;
       output = output + br + op;
     }
-    output = output.slice(0, input.number_output_char); //limit to exactly number_output_char
+    //output = output.slice(0, input.number_output_char); //limit to exactly number_output_char. will not work as <br> and cr
+    
     let meta_output = {
       "output": output,
       "period": period,
@@ -1074,6 +1094,7 @@ Pseudo Random Methods in JavaScript:
     meta_output = {};
     h = 7;
   };
+  
   var lcg = (function() { // Linear congruential generator
     let state = 0n; //persistant as we are in a closure
     let result = 0n;
@@ -1089,6 +1110,7 @@ Pseudo Random Methods in JavaScript:
       }
     };
   })();
+  
   var ca = (function() { //random number generatorbased on Cellular Automata rule 30, and others... 
     //persistant states here
     let state = 0n;
@@ -1126,6 +1148,7 @@ Pseudo Random Methods in JavaScript:
       }
     };
   })();
+  
   var lfsr = (function() { //random number generatorbased on Cellular Automata rule 30, and others... 
     //persistant states here
     let state = 0n;
