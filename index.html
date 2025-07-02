@@ -982,7 +982,7 @@ Pseudo Random Methods in JavaScript:
     Hide <input type="radio" id="hide_output" name="show_output" value="hide">
     <br>
     Lines <input type="radio" id="display_lines" name="display_lines" value="lines" checked>
-    Inline <input type="radio" id="display_inline" name="display_lines" value="inline">
+    Inline <input type="radio" id="display_inline" name="display_lines" value="inline"> (Inline has no html)
   </p>
   <p>
     <button id="calculate" type="submit" value="calculate">Calculate</button>
@@ -1276,9 +1276,10 @@ webworker.onmessage = function (event) {
   webworker_output = event.data;
   if (typeof event.data == "undefined") return false;
   document.getElementById("message").innerHTML = `Output ready.<br> 
-Repeating register period found. Period: ${webworker_output.period}<br>
+  Register output cycle:</br>
   First period value found:  ${webworker_output.period_first_found_value}<br>
-  First period location found at: ${webworker_output.period_first_location}<br>
+  Found at location: ${webworker_output.period_first_location}<br>
+  Period of (repeats every): ${webworker_output.period}<br>
   One to Zero Ratio: ${webworker_output.one_zero_ratio}
  `;
   if (document.getElementById("show_output").checked) {
